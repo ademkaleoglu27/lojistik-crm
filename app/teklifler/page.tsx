@@ -1,0 +1,1 @@
+export default function Page() { return <div className="p-10 text-center">🧾<br/>Teklif ve Hesap Modülü<br/>(Yakında)</div>; }

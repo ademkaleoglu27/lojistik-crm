@@ -1,0 +1,1 @@
+export default function Page() { return <div className="p-10 text-center">📅<br/>Ajanda ve Takvim<br/>(Yakında)</div>; }

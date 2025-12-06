@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-// Az önce yaptığımız Header dosyasını çağırıyoruz:
 import { Header } from "@/components/header"; 
+import { BottomNav } from "@/components/bottom-nav";
 
 export const metadata: Metadata = {
   title: "Lojistik Takip",
@@ -15,12 +15,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr">
-      <body className="bg-gray-50 min-h-screen">
-        {/* Menüyü en tepeye koyduk */}
+      <body className="bg-gray-50 min-h-screen pb-20">
+        
+        {/* Üst Menü */}
         <Header />
         
-        {/* Sayfa içerikleri buraya gelecek */}
+        {/* Sayfa İçeriği */}
         <main>{children}</main>
+
+        {/* Alt Menü */}
+        <BottomNav />
+        
       </body>
     </html>
   );
