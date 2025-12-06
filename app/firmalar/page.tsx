@@ -1,4 +1,4 @@
-"use client"; // Hafızayı okuyacağı için bu da Client tarafında çalışmalı
+"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -36,7 +36,7 @@ export default function FirmalarSayfasi() {
       </div>
 
       {firmalar.length === 0 ? (
-        // LİSTE BOŞSA BU GÖRÜNECEK
+        // LİSTE BOŞSA
         <div className="bg-white rounded-lg shadow-md border border-gray-100 p-12 text-center text-gray-500">
           <div className="flex justify-center mb-4">
             <div className="bg-blue-50 p-4 rounded-full">
@@ -47,7 +47,7 @@ export default function FirmalarSayfasi() {
           <p className="mt-1">Yukarıdaki butona basarak ilk firmanı ekle.</p>
         </div>
       ) : (
-        // LİSTE DOLUYSA BU GÖRÜNECEK
+        // LİSTE DOLUYSA
         <div className="grid gap-4">
           {firmalar.map((firma) => (
             <div key={firma.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -76,7 +76,14 @@ export default function FirmalarSayfasi() {
                   <Phone size={20} />
                 </a>
                 
-                {/* Silme Butonu */}
+                {/* İŞTE BURASI DEĞİŞTİ: Detay Butonu artık Link Oldu */}
+                <Link 
+                  href={`/firmalar/${firma.id}`}
+                  className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 text-sm font-medium"
+                >
+                  Detaylar
+                </Link>
+
                 <button 
                   onClick={() => sil(firma.id)}
                   className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 border border-red-200"
