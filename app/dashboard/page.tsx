@@ -11,6 +11,8 @@ type Firm = {
   segment: string;
   note: string;
   createdAt: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 type AjandaItem = {
@@ -49,6 +51,11 @@ export default function DashboardPage() {
   const [city, setCity] = useState('');
   const [segment, setSegment] = useState('');
   const [note, setNote] = useState('');
+
+  // Konum state
+  const [currentLat, setCurrentLat] = useState<number | null>(null);
+  const [currentLng, setCurrentLng] = useState<number | null>(null);
+  const [locationStatus, setLocationStatus] = useState('');
 
   // Özet alanları
   const [todayMeetCount, setTodayMeetCount] = useState(0);
@@ -157,6 +164,34 @@ export default function DashboardPage() {
     localStorage.setItem(FIRMS_KEY, JSON.stringify(list));
   };
 
+  const handleCaptureLocation = () => {
+    setLocationStatus('');
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      setLocationStatus('Tarayıcı konum desteği bulunamadı.');
+      return;
+    }
+    if (!navigator.geolocation) {
+      setLocationStatus('Tarayıcınız konum özelliğini desteklemiyor.');
+      return;
+    }
+
+    setLocationStatus('Konum alınıyor...');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCurrentLat(pos.coords.latitude);
+        setCurrentLng(pos.coords.longitude);
+        setLocationStatus('Konum kaydedildi. Kaydı yaptığınızda müşteriye bağlanacak.');
+      },
+      (err) => {
+        setLocationStatus('Konum alınamadı: ' + err.message);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+      }
+    );
+  };
+
   const handleAddFirm = () => {
     if (!name.trim()) return;
 
@@ -169,17 +204,23 @@ export default function DashboardPage() {
       segment: segment.trim(),
       note: note.trim(),
       createdAt: new Date().toISOString(),
+      latitude: currentLat ?? undefined,
+      longitude: currentLng ?? undefined,
     };
 
     const updated = [newFirm, ...firms];
     saveFirms(updated);
 
+    // form temizle
     setName('');
     setContact('');
     setPhone('');
     setCity('');
     setSegment('');
     setNote('');
+    setCurrentLat(null);
+    setCurrentLng(null);
+    setLocationStatus('');
     setSelectedFirm(newFirm);
   };
 
@@ -383,7 +424,8 @@ export default function DashboardPage() {
                   color: '#9ca3af',
                 }}
               >
-                CRM’e hızlı müşteri eklemek için temel bilgileri doldurun.
+                CRM’e hızlı müşteri eklemek için temel bilgileri doldurun. İsterseniz
+                müşterinin konumunu da kaydedebilirsiniz.
               </p>
             </div>
             <button
@@ -466,6 +508,65 @@ export default function DashboardPage() {
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Örn: Filo adedi, araç tipi, özel not..."
               />
+            </div>
+
+            {/* Konum satırı */}
+            <div
+              style={{
+                gridColumn: '1/-1',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+                fontSize: '11px',
+                color: '#9ca3af',
+                borderTop: '1px dashed rgba(55,65,81,0.9)',
+                paddingTop: '8px',
+              }}
+            >
+              <span>
+                Konum (opsiyonel) — Müşteri ofisindeyken &quot;Konumu Kaydet&quot; butonuna
+                basarsanız, bu nokta müşteri kartına kaydedilir ve daha sonra yol
+                tarifi alabilirsiniz.
+              </span>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '8px',
+                  flexWrap: 'wrap',
+                  alignItems: 'center',
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={handleCaptureLocation}
+                  style={{
+                    borderRadius: '999px',
+                    border: '1px solid rgba(74,222,128,0.9)',
+                    background:
+                      'radial-gradient(circle at top, #4ade80, #22c55e)',
+                    padding: '5px 12px',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    color: '#052e16',
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  📍 Konumu Kaydet
+                </button>
+                {locationStatus && (
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      color: locationStatus.startsWith('Konum kaydedildi')
+                        ? '#bbf7d0'
+                        : '#9ca3af',
+                    }}
+                  >
+                    {locationStatus}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </section>
@@ -721,6 +822,7 @@ export default function DashboardPage() {
                       gap: '6px',
                       fontSize: '11px',
                       color: '#e5e7eb',
+                      marginBottom: '4px',
                     }}
                   >
                     <span>
@@ -734,11 +836,50 @@ export default function DashboardPage() {
                       style={{
                         fontSize: '11px',
                         color: '#9ca3af',
-                        marginTop: '4px',
+                        marginTop: '2px',
                       }}
                     >
                       Not: {selectedFirm.note}
                     </p>
+                  )}
+
+                  {/* Konum bilgisi ve yol tarifi */}
+                  {selectedFirm.latitude && selectedFirm.longitude && (
+                    <div
+                      style={{
+                        marginTop: '6px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        gap: '8px',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: '11px',
+                          color: '#9ca3af',
+                        }}
+                      >
+                        Konum kaydedildi. Yol tarifi için tıklayın.
+                      </span>
+                      <a
+                        href={`https://www.google.com/maps?q=${selectedFirm.latitude},${selectedFirm.longitude}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          fontSize: '11px',
+                          borderRadius: '999px',
+                          border: '1px solid rgba(56,189,248,0.9)',
+                          padding: '4px 10px',
+                          textDecoration: 'none',
+                          color: '#e5e7eb',
+                          backgroundColor: '#0f172a',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        🗺 Yol Tarifi Al
+                      </a>
+                    </div>
                   )}
                 </div>
 
