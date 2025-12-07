@@ -1,21 +1,21 @@
-// app/api/teklif-word/route.ts
-
 export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
-import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel } from 'docx';
 
+// Ön yüzden gelen veriler
 type TeklifPayload = {
   firmaAdi: string;
   yetkiliAdi: string;
-  iskontoOrani: number; // TR genel iskonto
-  istasyonIskontoOrani: number; // anlaşmalı istasyon iskonto
+  iskontoOrani: number; 
+  istasyonIskontoOrani: number;
+  vade: string;
 };
 
 function sanitizeFileName(name: string) {
   if (!name) return 'Teklif';
   return name
-    .replace(/[^\p{L}0-9-_ ]/gu, '') // Türkçe harfleri koru, diğer özel karakterleri at
+    .replace(/[^\p{L}0-9-_ ]/gu, '')
     .trim()
     .replace(/\s+/g, '-');
 }
@@ -28,167 +28,107 @@ export async function POST(request: Request) {
     const yetkiliAdi = body.yetkiliAdi || '';
     const iskontoOrani = body.iskontoOrani ?? 0;
     const istasyonIskontoOrani = body.istasyonIskontoOrani ?? 0;
+    const vade = body.vade || 'Peşin / Kredi Kartı'; // Vade bilgisi
 
     const today = new Date();
     const tarihStr = today.toLocaleDateString('tr-TR');
 
+    // --- WORD BELGESİNİ OLUŞTURUYORUZ ---
     const doc = new Document({
       sections: [
         {
           properties: {},
           children: [
+            // BAŞLIK
             new Paragraph({
-              children: [
-                new TextRun({
-                  text: 'AKARYAKIT TEDARİK TEKLİFİ',
-                  bold: true,
-                  size: 32,
-                }),
-              ],
-            }),
-            new Paragraph({ text: '' }),
-
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Firma: ${firmaAdi}`,
-                  bold: true,
-                  size: 24,
-                }),
-              ],
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Yetkili: ${yetkiliAdi || '-'}`,
-                  size: 22,
-                }),
-              ],
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Tarih: ${tarihStr}`,
-                  size: 22,
-                }),
-              ],
+              text: 'AKARYAKIT TEDARİK TEKLİFİ',
+              heading: HeadingLevel.HEADING_1,
+              alignment: AlignmentType.CENTER,
+              spacing: { after: 300 },
             }),
 
-            new Paragraph({ text: '' }),
-            new Paragraph({ text: '' }),
+            // BİLGİLER
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Tarih: ', bold: true }),
+                new TextRun(tarihStr),
+              ],
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Firma Adı: ', bold: true }),
+                new TextRun(firmaAdi),
+              ],
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({ text: 'Yetkili: ', bold: true }),
+                new TextRun(yetkiliAdi),
+              ],
+              spacing: { after: 300 }, // Biraz boşluk bırak
+            }),
 
+            // 1. İSKONTO ORANLARI
             new Paragraph({
+              text: '1) Uygulanacak İskonto Oranları',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 200, after: 100 },
+            }),
+            new Paragraph({
+              bullet: { level: 0 },
               children: [
-                new TextRun({
-                  text: '1) Uygulanacak İskonto Oranları',
-                  bold: true,
-                  size: 26,
-                }),
+                new TextRun({ text: 'Türkiye Geneli İskonto: ', bold: true }),
+                new TextRun(`% ${iskontoOrani}`),
               ],
             }),
             new Paragraph({
+              bullet: { level: 0 },
               children: [
-                new TextRun({
-                  text: `- Türkiye Geneli İskonto Oranı: % ${iskontoOrani.toFixed(
-                    2
-                  )}`,
-                  size: 22,
-                }),
-              ],
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `- Anlaşmalı İstasyon İskonto Oranı: % ${istasyonIskontoOrani.toFixed(
-                    2
-                  )}`,
-                  size: 22,
-                }),
+                new TextRun({ text: 'Anlaşmalı İstasyon İskonto: ', bold: true }),
+                new TextRun(`% ${istasyonIskontoOrani}`),
               ],
             }),
 
-            new Paragraph({ text: '' }),
+            // 2. VADE VE ÖDEME
             new Paragraph({
-              children: [
-                new TextRun({
-                  text: '2) Açıklama',
-                  bold: true,
-                  size: 26,
-                }),
-              ],
+              text: '2) Vade ve Ödeme Koşulları',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 300, after: 100 },
             }),
             new Paragraph({
               children: [
-                new TextRun({
-                  text:
-                    'Belirtilen iskonto oranları kapsamında, güncel pompa satış fiyatları üzerinden yapılacak indirimlerle ' +
-                    'fiyatlama gerçekleştirilecektir. İskonto oranları akaryakıt dağıtım şirketinin güncel liste fiyatları ve ' +
-                    'piyasa koşullarına göre revize edilebilir.',
-                  size: 22,
-                }),
+                new TextRun({ text: 'Ödeme Koşulu: ', bold: true }),
+                new TextRun(vade),
               ],
+            }),
+            new Paragraph({
+              text: 'Limit ve ödeme koşulları firma risk değerlendirmesi sonucunda netleşecektir.',
+              spacing: { after: 200 },
             }),
 
-            new Paragraph({ text: '' }),
+            // 3. AÇIKLAMA
             new Paragraph({
-              children: [
-                new TextRun({
-                  text: '3) Vade ve Ödeme Koşulları',
-                  bold: true,
-                  size: 26,
-                }),
-              ],
+              text: '3) Açıklamalar',
+              heading: HeadingLevel.HEADING_2,
+              spacing: { before: 200, after: 100 },
             }),
             new Paragraph({
-              children: [
-                new TextRun({
-                  text:
-                    'Vade, limit ve ödeme koşulları firma risk değerlendirmesi sonucunda ayrıca belirlenecek olup, ' +
-                    'karşılıklı mutabakat sonrasında yazılı olarak teyit edilecektir.',
-                  size: 22,
-                }),
-              ],
+              text: 'Belirtilen iskonto oranları kapsamında, güncel pompa satış fiyatları üzerinden indirim uygulanacaktır. Piyasada oluşabilecek olağanüstü durumlarda fiyatlar revize edilebilir.',
             }),
 
-            new Paragraph({ text: '' }),
+            // İMZA BÖLÜMÜ
             new Paragraph({
-              children: [
-                new TextRun({
-                  text: '4) Geçerlilik',
-                  bold: true,
-                  size: 26,
-                }),
-              ],
+              text: '',
+              spacing: { before: 600 },
             }),
             new Paragraph({
               children: [
-                new TextRun({
-                  text:
-                    'Bu teklif, düzenlenme tarihinden itibaren sınırlı bir süre için geçerlidir. Piyasa koşulları ve dağıtım şirketi fiyat ' +
-                    'politikalarına göre revize edilebilir.',
-                  size: 22,
-                }),
-              ],
-            }),
-
-            new Paragraph({ text: '' }),
-            new Paragraph({ text: '' }),
-
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: 'Saygılarımızla,',
-                  size: 22,
-                }),
+                new TextRun({ text: 'Saygılarımızla,', italics: true }),
               ],
             }),
             new Paragraph({
-              children: [
-                new TextRun({
-                  text: '______________________________',
-                  size: 22,
-                }),
-              ],
+              text: '__________________________',
+              spacing: { before: 400 },
             }),
           ],
         },
@@ -197,9 +137,8 @@ export async function POST(request: Request) {
 
     const buffer = await Packer.toBuffer(doc);
 
-    // 🔑 ÖNEMLİ: Buffer -> Uint8Array çeviriyoruz ki NextResponse kabul etsin
+    // Dosyayı hazırla
     const uint8 = new Uint8Array(buffer as any);
-
     const safeName = sanitizeFileName(firmaAdi);
     const fileName = `Teklif-${safeName}.docx`;
 
@@ -214,7 +153,7 @@ export async function POST(request: Request) {
   } catch (e) {
     console.error('TEKLIF WORD HATASI:', e);
     return NextResponse.json(
-      { error: 'TEKLIF_CREATE_FAILED' },
+      { error: 'TEKLIF_OLUSTURMA_HATASI' },
       { status: 500 }
     );
   }
