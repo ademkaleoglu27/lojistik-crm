@@ -1,48 +1,49 @@
+// app/page.tsx
+
+'use client';
+
 import Link from 'next/link';
 
 export default function HomePage() {
   return (
-    <main className="home">
-      <div className="home-inner">
-        <h1 className="home-title">Hoş Geldiniz</h1>
-        <p className="home-subtitle">
-          Lojistik ve Saha Satış Yönetim Paneli
-        </p>
+    <main
+      style={{
+        minHeight: '100vh',
+        padding: '32px',
+        backgroundColor: '#020617',
+        color: '#f8fafc',
+      }}
+    >
+      <h1 style={{ fontSize: '28px', fontWeight: 700, marginBottom: '16px' }}>
+        Lojistik CRM Uygulaması
+      </h1>
 
-        <div className="home-actions">
-          {/* Firmaları Yönet kartı */}
-          <Link href="/firmalar" className="home-card">
-            <div>
-              <h2>Firmaları Yönet</h2>
-              <p>
-                Mevcut firma listenizi yönetin, CRM tarafında müşteri bilgilerini ve
-                görüşme notlarını tutun, teklif ve fiyatları takip edin.
-              </p>
-            </div>
-            <span className="home-card-cta">CRM’e git →</span>
-          </Link>
+      <p style={{ fontSize: '16px', opacity: 0.8 }}>
+        Aşağıdaki seçeneklerden devam edebilirsiniz.
+      </p>
 
-          {/* İnternetten Firma Bul kartı */}
-          <Link href="/firma-bul" className="home-card">
-            <div>
-              <h2>İnternetten Firma Bul</h2>
-              <p>
-                Google üzerinden lojistik, turizm vb. firmaları arayın, iletişim
-                bilgilerini görün ve seçtiklerinizi tek tıkla CRM listenize ekleyin.
-              </p>
-            </div>
-            <span className="home-card-cta">Firma bulmaya başla →</span>
-          </Link>
-        </div>
+      <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <Link href="/dashboard">
+          <div style={{
+            padding: '16px',
+            background: '#1e293b',
+            borderRadius: '8px',
+            cursor: 'pointer'
+          }}>
+            📊 CRM Paneline Git
+          </div>
+        </Link>
 
-        {/* Alt menü – mevcut linklerin daha derli toplu hali */}
-        <nav className="home-nav">
-          <Link href="/pano">Pano</Link>
-          <Link href="/firma-bul">Firma Bul</Link>
-          <Link href="/firmalar">Müşteriler</Link>
-          <Link href="/teklif">Teklif/Hesap</Link>
-          <Link href="/ajanda">Ajanda</Link>
-        </nav>
+        <Link href="/firma-bul">
+          <div style={{
+            padding: '16px',
+            background: '#1e293b',
+            borderRadius: '8px',
+            cursor: 'pointer'
+          }}>
+            🔍 İnternetten Müşteri Bul
+          </div>
+        </Link>
       </div>
     </main>
   );
