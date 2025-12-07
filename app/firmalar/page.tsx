@@ -130,7 +130,7 @@ export default function FirmalarPage() {
 
   return (
     <div className="teklif-page">
-      <h1 className="teklif-title">Müşteri Listesi / CRM</h1>
+      <h1 className="teklif-title" style={{color: 'red'}}>DENEME 123 - TEST</h1>
       <p className="teklif-info">
         Müşterilerinizi buradan yönetin. Konum özelliği ile adres tarifi alın.
       </p>
