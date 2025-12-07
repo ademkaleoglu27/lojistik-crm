@@ -1,32 +1,36 @@
-import { NextResponse } from 'next/server';
-import { Document, Packer, Paragraph, TextRun } from 'docx';
+// app/api/teklif-word/route.ts
 
 export const runtime = 'nodejs';
 
-function toNum(v: unknown): number {
-  if (typeof v === 'number') return v;
-  if (typeof v === 'string') {
-    const n = parseFloat(v.replace(',', '.'));
-    return isNaN(n) ? 0 : n;
-  }
-  return 0;
+import { NextResponse } from 'next/server';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+
+type TeklifPayload = {
+  firmaAdi: string;
+  yetkiliAdi: string;
+  iskontoOrani: number; // TR genel iskonto
+  istasyonIskontoOrani: number; // anlaşmalı istasyon iskonto
+};
+
+function sanitizeFileName(name: string) {
+  if (!name) return 'Teklif';
+  return name
+    .replace(/[^\p{L}0-9-_ ]/gu, '') // Türkçe harfleri koru, diğer özel karakterleri at
+    .trim()
+    .replace(/\s+/g, '-');
 }
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const body = (await req.json()) as any;
+    const body = (await request.json()) as TeklifPayload;
 
-    const firmaAdi = (body.firmaAdi || '').toString();
-    const yetkiliAdi = (body.yetkiliAdi || '').toString();
-    const discountTR = toNum(body.discountTR);
-    const discountStation = toNum(body.discountStation);
+    const firmaAdi = body.firmaAdi || 'Firma';
+    const yetkiliAdi = body.yetkiliAdi || '';
+    const iskontoOrani = body.iskontoOrani ?? 0;
+    const istasyonIskontoOrani = body.istasyonIskontoOrani ?? 0;
 
-    if (!firmaAdi.trim() || !yetkiliAdi.trim()) {
-      return NextResponse.json(
-        { error: 'Firma adı ve yetkili adı zorunludur.' },
-        { status: 400 }
-      );
-    }
+    const today = new Date();
+    const tarihStr = today.toLocaleDateString('tr-TR');
 
     const doc = new Document({
       sections: [
@@ -36,7 +40,7 @@ export async function POST(req: Request) {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: 'TEKLİF FORMU',
+                  text: 'AKARYAKIT TEDARİK TEKLİFİ',
                   bold: true,
                   size: 32,
                 }),
@@ -46,62 +50,143 @@ export async function POST(req: Request) {
 
             new Paragraph({
               children: [
-                new TextRun({ text: 'Firma: ', bold: true }),
-                new TextRun({ text: firmaAdi }),
-              ],
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({ text: 'Yetkili: ', bold: true }),
-                new TextRun({ text: yetkiliAdi }),
-              ],
-            }),
-
-            new Paragraph({ text: '' }),
-            new Paragraph({
-              children: [
                 new TextRun({
-                  text: 'Türkiye Geneli İskonto Oranı',
+                  text: `Firma: ${firmaAdi}`,
                   bold: true,
+                  size: 24,
                 }),
               ],
             }),
             new Paragraph({
               children: [
                 new TextRun({
-                  text: discountTR
-                    ? `%${discountTR.toFixed(2)}`
-                    : 'Belirtilmedi',
+                  text: `Yetkili: ${yetkiliAdi || '-'}`,
+                  size: 22,
+                }),
+              ],
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `Tarih: ${tarihStr}`,
+                  size: 22,
                 }),
               ],
             }),
 
             new Paragraph({ text: '' }),
+            new Paragraph({ text: '' }),
+
             new Paragraph({
               children: [
                 new TextRun({
-                  text: 'Anlaşmalı İstasyon İskonto Oranı',
+                  text: '1) Uygulanacak İskonto Oranları',
                   bold: true,
+                  size: 26,
                 }),
               ],
             }),
             new Paragraph({
               children: [
                 new TextRun({
-                  text: discountStation
-                    ? `%${discountStation.toFixed(2)}`
-                    : 'Belirtilmedi',
+                  text: `- Türkiye Geneli İskonto Oranı: % ${iskontoOrani.toFixed(
+                    2
+                  )}`,
+                  size: 22,
+                }),
+              ],
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `- Anlaşmalı İstasyon İskonto Oranı: % ${istasyonIskontoOrani.toFixed(
+                    2
+                  )}`,
+                  size: 22,
                 }),
               ],
             }),
 
             new Paragraph({ text: '' }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: '2) Açıklama',
+                  bold: true,
+                  size: 26,
+                }),
+              ],
+            }),
             new Paragraph({
               children: [
                 new TextRun({
                   text:
-                    'Not: Bu teklif, belirtilen iskonto oranlarına göre hazırlanmıştır. Detaylı fiyat ve karlılık hesabı ayrıca paylaşılacaktır.',
-                  size: 20,
+                    'Belirtilen iskonto oranları kapsamında, güncel pompa satış fiyatları üzerinden yapılacak indirimlerle ' +
+                    'fiyatlama gerçekleştirilecektir. İskonto oranları akaryakıt dağıtım şirketinin güncel liste fiyatları ve ' +
+                    'piyasa koşullarına göre revize edilebilir.',
+                  size: 22,
+                }),
+              ],
+            }),
+
+            new Paragraph({ text: '' }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: '3) Vade ve Ödeme Koşulları',
+                  bold: true,
+                  size: 26,
+                }),
+              ],
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text:
+                    'Vade, limit ve ödeme koşulları firma risk değerlendirmesi sonucunda ayrıca belirlenecek olup, ' +
+                    'karşılıklı mutabakat sonrasında yazılı olarak teyit edilecektir.',
+                  size: 22,
+                }),
+              ],
+            }),
+
+            new Paragraph({ text: '' }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: '4) Geçerlilik',
+                  bold: true,
+                  size: 26,
+                }),
+              ],
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text:
+                    'Bu teklif, düzenlenme tarihinden itibaren sınırlı bir süre için geçerlidir. Piyasa koşulları ve dağıtım şirketi fiyat ' +
+                    'politikalarına göre revize edilebilir.',
+                  size: 22,
+                }),
+              ],
+            }),
+
+            new Paragraph({ text: '' }),
+            new Paragraph({ text: '' }),
+
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: 'Saygılarımızla,',
+                  size: 22,
+                }),
+              ],
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: '______________________________',
+                  size: 22,
                 }),
               ],
             }),
@@ -111,11 +196,14 @@ export async function POST(req: Request) {
     });
 
     const buffer = await Packer.toBuffer(doc);
-    const safeName =
-      firmaAdi.trim().length > 0 ? firmaAdi.trim().replace(/\s+/g, '-') : 'musteri';
+
+    // 🔑 ÖNEMLİ: Buffer -> Uint8Array çeviriyoruz ki NextResponse kabul etsin
+    const uint8 = new Uint8Array(buffer as any);
+
+    const safeName = sanitizeFileName(firmaAdi);
     const fileName = `Teklif-${safeName}.docx`;
 
-    return new NextResponse(buffer, {
+    return new NextResponse(uint8, {
       status: 200,
       headers: {
         'Content-Type':
@@ -126,7 +214,7 @@ export async function POST(req: Request) {
   } catch (e) {
     console.error('TEKLIF WORD HATASI:', e);
     return NextResponse.json(
-      { error: 'Sunucu tarafında bir hata oluştu.' },
+      { error: 'TEKLIF_CREATE_FAILED' },
       { status: 500 }
     );
   }
