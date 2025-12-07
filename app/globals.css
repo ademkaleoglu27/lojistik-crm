@@ -981,4 +981,321 @@ a {
   font-size: 0.8rem;
   color: #9ca3af;
 }
+/* === CRM KURUMSAL TEMA === */
+
+:root {
+  color-scheme: dark;
+  --crm-bg: #020617;
+  --crm-card: rgba(15, 23, 42, 0.97);
+  --crm-border-soft: rgba(148, 163, 184, 0.4);
+  --crm-border-strong: rgba(148, 163, 184, 0.7);
+  --crm-text-main: #e5e7eb;
+  --crm-text-soft: #9ca3af;
+  --crm-accent-blue: #38bdf8;
+  --crm-accent-green: #4ade80;
+}
+
+body {
+  background: radial-gradient(circle at top, #0b1120 0, #020617 55%, #000 100%);
+  color: var(--crm-text-main);
+}
+
+/* Form alanları – tüm ekranlarda ortak */
+.teklif-form {
+  display: grid;
+  gap: 8px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.field label {
+  color: var(--crm-text-soft);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.field input,
+.field select,
+.field textarea {
+  background: rgba(15, 23, 42, 0.88);
+  border-radius: 10px;
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  padding: 7px 10px;
+  font-size: 13px;
+  color: var(--crm-text-main);
+  outline: none;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--crm-accent-blue);
+  box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+}
+
+/* Arama çubukları */
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-input {
+  width: 100%;
+  background: rgba(15, 23, 42, 0.92);
+  border-radius: 999px;
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  padding: 7px 12px;
+  font-size: 13px;
+  color: var(--crm-text-main);
+  outline: none;
+}
+
+.search-input::placeholder {
+  color: rgba(148, 163, 184, 0.8);
+}
+
+.search-input:focus {
+  border-color: var(--crm-accent-blue);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+
+/* Müşteri kartları */
+.firm-card {
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s;
+}
+
+.firm-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.95);
+}
+
+/* === NAVBAR – ÜST MENÜ + MOBİL ALT MENÜ === */
+
+.navbar-root {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: blur(16px);
+  background:
+    radial-gradient(circle at top, rgba(15, 23, 42, 0.96), rgba(2, 6, 23, 0.96));
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.navbar-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.navbar-logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  background: radial-gradient(circle at top left, #38bdf8, #0f172a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0b1120;
+}
+
+.navbar-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.navbar-subtitle {
+  font-size: 11px;
+  color: var(--crm-text-soft);
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-link {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: var(--crm-text-soft);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.nav-link span.nav-icon {
+  font-size: 13px;
+}
+
+.nav-link:hover {
+  color: var(--crm-accent-blue);
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.nav-link.active {
+  color: #0f172a;
+  border-color: rgba(56, 189, 248, 0.9);
+  background: radial-gradient(circle at top, #38bdf8, #0ea5e9);
+}
+
+/* Mobil alt menü */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.85);
+  display: flex;
+  gap: 4px;
+}
+
+.mobile-bottom-nav a {
+  min-width: 70px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  text-decoration: none;
+  color: var(--crm-text-soft);
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.mobile-bottom-nav a .icon {
+  font-size: 14px;
+}
+
+.mobile-bottom-nav a.active {
+  border-color: rgba(56, 189, 248, 0.8);
+  color: var(--crm-accent-blue);
+}
+
+/* Desktop / mobile görünürlük */
+@media (max-width: 768px) {
+  .nav-links-desktop {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-bottom-nav {
+    display: none;
+  }
+}
+/* Firma Bul – sonuç kart tasarımı */
+.firma-result-wrapper {
+  display: grid;
+  gap: 10px;
+}
+
+.firma-result-card {
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.09), rgba(15, 23, 42, 0.98));
+  padding: 10px 11px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.95);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.firma-result-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(56, 189, 248, 0.9);
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.98);
+}
+
+.firma-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.firma-result-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e5e7eb;
+}
+
+.firma-result-city {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  color: #cbd5e1;
+}
+
+.firma-result-meta {
+  font-size: 11px;
+  color: #cbd5e1;
+}
+
+.firma-result-meta span + span::before {
+  content: '•';
+  margin: 0 4px;
+  color: rgba(148, 163, 184, 0.9);
+}
+
+.firma-result-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.firma-result-actions button,
+.firma-result-actions a {
+  font-size: 11px;
+  border-radius: 999px;
+  padding: 5px 10px;
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.firma-result-actions button.primary {
+  border-color: rgba(56, 189, 248, 0.9);
+  background: radial-gradient(circle at top, #38bdf8, #0ea5e9);
+  color: #0f172a;
+}
 

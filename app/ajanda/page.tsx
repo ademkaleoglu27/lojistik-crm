@@ -40,7 +40,6 @@ export default function AjandaPage() {
     'today'
   );
 
-  // İlk yüklemede localStorage'tan verileri çek
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -48,7 +47,6 @@ export default function AjandaPage() {
       const raw = localStorage.getItem(AJANDA_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as AjandaItem[];
-        // tarih + saat sırasına göre
         const sorted = [...parsed].sort((a, b) => {
           const aKey = `${a.date}T${a.time || '00:00'}`;
           const bKey = `${b.date}T${b.time || '00:00'}`;
@@ -56,9 +54,7 @@ export default function AjandaPage() {
         });
         setItems(sorted);
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
 
     try {
       const rawF = localStorage.getItem(FIRMS_KEY);
@@ -66,11 +62,8 @@ export default function AjandaPage() {
         const parsed = JSON.parse(rawF) as { id: string; name: string }[];
         setFirms(parsed.map((f) => ({ id: f.id, name: f.name })));
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
 
-    // Varsayılan tarih bugünün tarihi olsun
     const today = new Date();
     const y = today.getFullYear();
     const m = String(today.getMonth() + 1).padStart(2, '0');
@@ -125,7 +118,6 @@ export default function AjandaPage() {
     }
 
     if (filterMode === 'week') {
-      // Bugünden +7 gün sonrasına kadar olan kayıtlar
       const start = new Date(todayStr + 'T00:00:00');
       const end = new Date(start);
       end.setDate(end.getDate() + 7);
@@ -154,7 +146,6 @@ export default function AjandaPage() {
           margin: '0 auto',
         }}
       >
-        {/* Başlık */}
         <header
           style={{
             marginBottom: '20px',
@@ -192,7 +183,6 @@ export default function AjandaPage() {
           </p>
         </header>
 
-        {/* Üst: Yeni kayıt formu */}
         <section
           style={{
             borderRadius: '16px',
@@ -312,7 +302,6 @@ export default function AjandaPage() {
           </div>
         </section>
 
-        {/* Alt: Filtre + liste */}
         <section
           style={{
             borderRadius: '16px',

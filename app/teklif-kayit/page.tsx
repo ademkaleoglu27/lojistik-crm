@@ -33,7 +33,6 @@ export default function TeklifKayitPage() {
   const [selectedFirmName, setSelectedFirmName] = useState('');
   const [offers, setOffers] = useState<OfferItem[]>([]);
 
-  // Form state
   const [vade, setVade] = useState('');
   const [discountTR, setDiscountTR] = useState<number | ''>('');
   const [discountStation, setDiscountStation] = useState<number | ''>('');
@@ -52,12 +51,9 @@ export default function TeklifKayitPage() {
           setSelectedFirmName(parsed[0].name);
         }
       }
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, []);
 
-  // Seçili firmaya ait teklifleri localStorage'tan çek
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!selectedFirmName) {
@@ -133,7 +129,6 @@ export default function TeklifKayitPage() {
           margin: '0 auto',
         }}
       >
-        {/* Başlık */}
         <header
           style={{
             marginBottom: '20px',
@@ -171,7 +166,6 @@ export default function TeklifKayitPage() {
           </p>
         </header>
 
-        {/* Üst: Firma seçimi + yeni teklif formu */}
         <section
           style={{
             borderRadius: '16px',
@@ -246,7 +240,7 @@ export default function TeklifKayitPage() {
                 onChange={(e) => setSelectedFirmName(e.target.value)}
               >
                 {firms.length === 0 ? (
-                  <option value="">Önce CRM'e müşteri ekleyin</option>
+                  <option value="">Önce CRM&apos;e müşteri ekleyin</option>
                 ) : (
                   firms.map((f) => (
                     <option key={f.id} value={f.name}>
@@ -305,7 +299,6 @@ export default function TeklifKayitPage() {
           </div>
         </section>
 
-        {/* Alt: Seçili firmaya ait teklif listesi */}
         <section
           style={{
             borderRadius: '16px',
