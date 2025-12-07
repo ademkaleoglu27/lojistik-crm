@@ -1,100 +1,130 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { Truck, Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
-  const girisYap = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setError('');
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      alert("Giriş Başarısız: " + error.message);
-      setLoading(false);
-    } else {
-      // Başarılıysa Ana Sayfaya yönlendir
-      router.push("/");
+    if (!username.trim() || !password.trim()) {
+      setError('Kullanıcı adı ve şifre zorunludur.');
+      return;
     }
+
+    // Şimdilik basit: localStorage'da saklayalım
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(
+        'crm-current-user',
+        JSON.stringify({ username: username.trim(), loginAt: new Date().toISOString() })
+      );
+    }
+
+    router.push('/dashboard');
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-900 relative overflow-hidden">
-      
-      {/* ARKA PLAN EFEKTLERİ (Sinematik) */}
-      <div className="absolute inset-0 z-0 opacity-20">
-        <img 
-          src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?q=80&w=2070&auto=format&fit=crop" 
-          alt="Lojistik Background" 
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-blue-900/50 mix-blend-multiply"></div>
-      </div>
+    <main
+      style={{
+        minHeight: '100vh',
+        background:
+          'radial-gradient(circle at top, #0f172a 0, #020617 55%, #000 100%)',
+        color: '#e5e7eb',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '380px',
+          borderRadius: '18px',
+          padding: '20px 18px 16px',
+          background:
+            'linear-gradient(135deg, rgba(15,23,42,0.97), rgba(15,23,42,0.95))',
+          border: '1px solid rgba(148,163,184,0.7)',
+          boxShadow: '0 24px 70px rgba(0,0,0,0.85)',
+        }}
+      >
+        <h1
+          style={{
+            fontSize: '18px',
+            fontWeight: 600,
+            marginBottom: '4px',
+          }}
+        >
+          Lojistik CRM Giriş
+        </h1>
+        <p
+          style={{
+            fontSize: '12px',
+            color: '#9ca3af',
+            marginBottom: '14px',
+          }}
+        >
+          Kullanıcı adınız ve şifrenizle sisteme giriş yapın.
+        </p>
 
-      {/* GİRİŞ KARTI (Glassmorphism) */}
-      <div className="relative z-10 w-full max-w-md p-6">
-        <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl">
-          
-          {/* Logo Alanı */}
-          <div className="text-center mb-8">
-            <div className="bg-blue-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-500/50">
-              <Truck size={32} className="text-white" />
-            </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">LojistikCRM</h1>
-            <p className="text-blue-200 text-sm mt-2">Saha Satış Yönetim Paneli</p>
+        <form onSubmit={handleLogin} className="teklif-form">
+          <div className="field">
+            <label>Kullanıcı Adı</label>
+            <input
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Örn: adem"
+            />
           </div>
 
-          {/* Form */}
-          <form onSubmit={girisYap} className="space-y-4">
-            <div className="space-y-2">
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 text-gray-400" size={20} />
-                <Input 
-                  type="email" 
-                  placeholder="E-posta Adresi" 
-                  className="pl-10 h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus:bg-white/10 transition-all"
-                  value={email} onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 text-gray-400" size={20} />
-                <Input 
-                  type="password" 
-                  placeholder="Şifre" 
-                  className="pl-10 h-12 bg-white/5 border-white/10 text-white placeholder:text-gray-400 focus:bg-white/10 transition-all"
-                  value={password} onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <Button className="w-full h-12 text-lg font-bold bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/50 transition-all mt-4">
-              {loading ? <Loader2 className="animate-spin" /> : <span className="flex items-center gap-2">Giriş Yap <ArrowRight size={20}/></span>}
-            </Button>
-          </form>
-          
-          <div className="mt-6 text-center text-xs text-gray-400">
-            <p>© 2025 LojistikCRM. Tüm hakları saklıdır.</p>
+          <div className="field">
+            <label>Şifre</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+            />
           </div>
 
-        </div>
-      </div>
+          {error && (
+            <p
+              style={{
+                fontSize: '12px',
+                color: '#f97373',
+                marginTop: '4px',
+              }}
+            >
+              {error}
+            </p>
+          )}
 
-    </div>
+          <button
+            type="submit"
+            style={{
+              marginTop: '10px',
+              width: '100%',
+              borderRadius: '999px',
+              border: '1px solid rgba(56,189,248,0.9)',
+              background:
+                'radial-gradient(circle at top, #38bdf8, #0ea5e9)',
+              padding: '8px 14px',
+              fontSize: '13px',
+              fontWeight: 500,
+              color: '#0f172a',
+              cursor: 'pointer',
+            }}
+          >
+            Giriş Yap
+          </button>
+        </form>
+      </div>
+    </main>
   );
 }
