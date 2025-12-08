@@ -7,10 +7,13 @@ export async function GET(req: Request) {
     const segment = searchParams.get('segment') || '';
     const keyword = searchParams.get('keyword') || '';
 
-    const apiKey = process.env.GOOGLE_PLACES_API_KEY;
+    // DÜZELTME BURADA YAPILDI: Senin kullandığın anahtar ismini buraya yazdım.
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    
     if (!apiKey) {
+      console.error("API KEY BULUNAMADI: .env dosyasını kontrol et"); // Konsola hata düşsün
       return NextResponse.json(
-        { error: 'GOOGLE_PLACES_API_KEY missing' },
+        { error: 'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY missing' },
         { status: 500 }
       );
     }

@@ -3,12 +3,12 @@
 import { useState } from 'react';
 
 type PlaceResult = {
+  id: string;
   name: string;
   address: string;
   phone: string;
   city: string;
-  lat: number;
-  lng: number;
+  website: string;
   mapsUrl: string;
 };
 
@@ -31,43 +31,49 @@ export default function FirmaBulPage() {
     setLoading(true);
 
     try {
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
-      if (!apiKey) {
-        setError('Google API anahtarı bulunamadı.');
-        setLoading(false);
-        return;
+      // DÜZELTME: Artık kendi yazdığımız backend servisine istek atıyoruz.
+      // API Key kontrolünü backend (route.ts) yapıyor.
+      const params = new URLSearchParams({
+        city: city,
+        keyword: keyword || 'lojistik firma',
+        // segment parametresini opsiyonel bıraktım
+      });
+
+      const res = await fetch(`/api/google-places?${params.toString()}`);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Sunucu hatası');
       }
 
-      const query = encodeURIComponent(
-        `${city} ${keyword || 'lojistik firma'}`
-      );
-
-      // Google URL
-      const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${query}&key=${apiKey}`;
-
-      const res = await fetch(`/api/proxy?url=${encodeURIComponent(url)}`);
       const data = await res.json();
 
-      if (!data.results) {
-        setError('Sonuç bulunamadı.');
+      if (!data.results || data.results.length === 0) {
+        setError('Aradığınız kriterlere uygun sonuç bulunamadı.');
         setLoading(false);
         return;
       }
 
+      // Gelen veriyi formatlıyoruz
       const formatted: PlaceResult[] = data.results.map((item: any) => ({
-        name: item.name || 'Firma adı bulunamadı',
-        address: item.formatted_address || '',
-        phone: item.formatted_phone_number || '',
-        city: city,
-        lat: item.geometry?.location?.lat || 0,
-        lng: item.geometry?.location?.lng || 0,
-        mapsUrl: `https://www.google.com/maps?q=${item.geometry?.location?.lat},${item.geometry?.location?.lng}`
+        id: item.id || crypto.randomUUID(),
+        name: item.name || 'İsimsiz Firma',
+        address: item.address || '',
+        phone: item.phone || '',
+        city: item.city || city,
+        website: item.website || '',
+        // Google Maps'te o firmayı açmak için güvenli link
+        mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.name + ' ' + item.address)}`
       }));
 
       setResults(formatted);
-    } catch (err) {
-      console.log(err);
-      setError('Arama sırasında bir hata oluştu.');
+    } catch (err: any) {
+      console.error(err);
+      if (err.message.includes('NEXT_PUBLIC_GOOGLE_MAPS_API_KEY missing')) {
+        setError('Sistem Hatası: API Anahtarı sunucuda tanımlanmamış.');
+      } else {
+        setError('Arama sırasında bir hata oluştu: ' + err.message);
+      }
     }
 
     setLoading(false);
@@ -78,23 +84,32 @@ export default function FirmaBulPage() {
       localStorage.getItem('firms-v1') || '[]'
     );
 
+    // Aynı firma daha önce eklenmiş mi kontrol et (Opsiyonel)
+    const isExist = existing.some((f: any) => f.name === firma.name);
+    if (isExist) {
+        alert('Bu firma listenizde zaten mevcut!');
+        return;
+    }
+
     const newFirm = {
       id: crypto.randomUUID(),
       name: firma.name,
-      contact: '',
+      contact: '', // Google'dan yetkili adı gelmez
       phone: firma.phone || '',
       city: firma.city,
-      segment: 'Lojistik / Otomatik Kayıt',
-      note: firma.address,
+      segment: 'İnternet Araması',
+      note: `${firma.address} - Web: ${firma.website}`,
       createdAt: new Date().toISOString(),
-      latitude: firma.lat,
-      longitude: firma.lng
+      // Backend'den lat/lng çekmedik, gerekirse route.ts güncellenmeli.
+      // Şimdilik 0,0 veriyoruz veya adres bazlı çalışıyoruz.
+      latitude: 0, 
+      longitude: 0 
     };
 
     const updated = [newFirm, ...existing];
     localStorage.setItem('firms-v1', JSON.stringify(updated));
 
-    alert('Firma CRM’e eklendi!');
+    alert(`${firma.name} başarıyla CRM’e eklendi!`);
   };
 
   return (
@@ -111,7 +126,7 @@ export default function FirmaBulPage() {
         🔍 İnternetten Firma Bul
       </h1>
       <p style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '16px' }}>
-        Google Places üzerinden şehir + anahtar kelime ile firma araması yapın.
+        Google Places üzerinden şehir + anahtar kelime ile güncel firma verisi çekin.
       </p>
 
       {/* Arama alanları */}
@@ -138,7 +153,7 @@ export default function FirmaBulPage() {
           <input
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            placeholder="Örn: lojistik, taşımacılık, turizm..."
+            placeholder="Örn: Lojistik, Gümrük, Tekstil..."
           />
         </div>
       </div>
@@ -146,24 +161,36 @@ export default function FirmaBulPage() {
       <button
         type="button"
         onClick={handleSearch}
+        disabled={loading}
         style={{
           borderRadius: '999px',
           padding: '8px 14px',
           border: '1px solid rgba(56,189,248,0.9)',
-          background:
-            'radial-gradient(circle at top, #38bdf8, #0ea5e9)',
-          color: '#0f172a',
+          background: loading ? '#334155' : 'radial-gradient(circle at top, #38bdf8, #0ea5e9)',
+          color: loading ? '#94a3b8' : '#0f172a',
           fontWeight: 600,
-          cursor: 'pointer',
+          cursor: loading ? 'wait' : 'pointer',
           fontSize: '13px',
-          marginBottom: '16px'
+          marginBottom: '16px',
+          opacity: loading ? 0.7 : 1
         }}
       >
-        🔍 Firma Ara
+        {loading ? 'Aranıyor...' : '🔍 Firma Ara'}
       </button>
 
-      {loading && <p>Aranıyor...</p>}
-      {error && <p style={{ color: '#f87171' }}>{error}</p>}
+      {error && (
+        <div style={{ 
+            padding: '10px', 
+            backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+            border: '1px solid rgba(239, 68, 68, 0.2)', 
+            borderRadius: '8px',
+            color: '#fca5a5',
+            marginBottom: '15px',
+            fontSize: '14px'
+        }}>
+            ⚠️ {error}
+        </div>
+      )}
 
       {/* Sonuç kartları */}
       <div className="firma-result-wrapper">
@@ -175,8 +202,9 @@ export default function FirmaBulPage() {
             </div>
 
             <div className="firma-result-meta">
-              <span>{firma.address}</span>
-              {firma.phone && <span>{firma.phone}</span>}
+              <span>📍 {firma.address}</span>
+              {firma.phone && <span>📞 {firma.phone}</span>}
+              {firma.website && <span>🌐 <a href={firma.website} target="_blank" rel="noreferrer" style={{color:'#38bdf8'}}>Web Sitesi</a></span>}
             </div>
 
             <div className="firma-result-actions">
@@ -184,15 +212,16 @@ export default function FirmaBulPage() {
                 className="primary"
                 onClick={() => handleAddToCRM(firma)}
               >
-                ➕ CRM&apos;e Ekle
+                ➕ CRM'e Ekle
               </button>
 
               <a
                 href={firma.mapsUrl}
                 target="_blank"
                 rel="noreferrer"
+                style={{textDecoration:'none', color: '#94a3b8', fontSize: '12px', display:'flex', alignItems:'center', gap:'4px'}}
               >
-                🗺 Haritada Aç
+                🗺 Haritada Gör
               </a>
             </div>
           </div>
