@@ -1,427 +1,513 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  type KeyboardEvent,
+} from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
-// --- TİP TANIMLAMALARI ---
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
 type PlaceResult = {
+  name?: string;
+  formatted_address?: string;
+  place_id?: string;
+  geometry?: {
+    location?: any;
+  };
+};
+
+type PlaceDetails = {
+  name?: string;
+  formatted_address?: string;
+  formatted_phone_number?: string;
+  website?: string;
+  place_id?: string;
+};
+
+type CustomerForStorage = {
   id: string;
   name: string;
+  contactName: string;
+  phone: string;
+  email: string;
   address: string;
-  phone: string;
-  city: string;
   website: string;
-  mapsUrl: string;
-  lat?: number;
-  lng?: number;
-  isAdded?: boolean;
+  brand: string;
+  discount: string;
+  locationUrl: string;
+  source: "manual" | "firma-bul";
+  createdAt: string;
 };
 
-// CRM Kayıt Formu (Müşteri Ekle sayfasıyla birebir aynı yapıda)
-type ModalData = {
-  name: string;
-  contact: string;     // Yetkili
-  phone: string;
-  city: string;
-  segment: string;     // Sektör
-  vehicleCount: string;// Araç Sayısı
-  status: string;      // Durum
-  note: string;        // Notlar
-  address: string;     // Açık Adres
-  website: string;
-  nextMeetingDate: string; // Ajanda / Randevu Tarihi
-  lat: number;
-  lng: number;
-};
-
-// Durum Seçenekleri (Renkli)
-const STATUS_OPTIONS = [
-  { value: 'Yeni', label: 'Yeni Aday', color: '#38bdf8' }, // Mavi
-  { value: 'Potansiyel', label: '🔥 Potansiyel', color: '#22c55e' }, // Yeşil
-  { value: 'Görüşüldü', label: '👀 Görüşüldü', color: '#fbbf24' }, // Sarı
-  { value: 'Teklif', label: '📄 Teklif Aşamasında', color: '#a855f7' }, // Mor
-  { value: 'Olumsuz', label: '❌ Olumsuz', color: '#94a3b8' }, // Gri
-];
+const STORAGE_KEY = "crm-customers";
 
 export default function FirmaBulPage() {
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const [city, setCity] = useState('');
-  const [keyword, setKeyword] = useState('');
+  const initialQuery = searchParams.get("query") || "";
+
+  const [query, setQuery] = useState(initialQuery);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<PlaceResult[]>([]);
-  const [error, setError] = useState('');
 
-  // --- MODAL STATE ---
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentFirmIndex, setCurrentFirmIndex] = useState<number | null>(null);
-  const [formData, setFormData] = useState<ModalData | null>(null);
+  const [selectedDetails, setSelectedDetails] = useState<PlaceDetails | null>(
+    null
+  );
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
-  // Arama Fonksiyonu
-  const handleSearch = async () => {
-    setError('');
-    setResults([]);
+  const [addMessage, setAddMessage] = useState<string | null>(null);
 
-    if (!city.trim()) {
-      setError('Lütfen bir şehir giriniz.');
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapInstance = useRef<any>(null);
+  const markersRef = useRef<any[]>([]);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+
+  // Google Maps script yükleme
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (window.google?.maps) {
+      setScriptLoaded(true);
+      return;
+    }
+
+    const key = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+    if (!key) {
+      setError(
+        "Google Maps API anahtarı bulunamadı. Lütfen env ayarlarını kontrol edin."
+      );
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places&language=tr`;
+    script.async = true;
+    script.defer = true;
+
+    script.onload = () => {
+      setScriptLoaded(true);
+    };
+
+    script.onerror = () => {
+      setError("Google Maps script yüklenirken hata oluştu.");
+    };
+
+    document.head.appendChild(script);
+
+    return () => {
+      script.onload = null;
+      script.onerror = null;
+    };
+  }, []);
+
+  // Harita ilk kurulum
+  useEffect(() => {
+    if (!scriptLoaded) return;
+    if (!mapRef.current) return;
+    if (mapInstance.current) return; // zaten oluşturuldu
+
+    const center = { lat: 39.0, lng: 35.0 }; // Türkiye ortalama
+
+    mapInstance.current = new window.google.maps.Map(mapRef.current, {
+      center,
+      zoom: 5,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+    });
+  }, [scriptLoaded]);
+
+  // Eski marker'ları temizle
+  const clearMarkers = () => {
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
+  };
+
+  // Arama fonksiyonu
+  const performSearch = useCallback((searchText: string) => {
+    if (!mapInstance.current || !window.google?.maps?.places) {
+      setError("Harita veya Places servisi henüz hazır değil.");
+      return;
+    }
+
+    const trimmed = searchText.trim();
+    if (!trimmed) {
+      setError("Lütfen arama kutusuna bir değer girin.");
       return;
     }
 
     setLoading(true);
+    setError(null);
+    setSelectedDetails(null);
+    setAddMessage(null);
 
-    try {
-      const params = new URLSearchParams({
-        city: city,
-        keyword: keyword || 'lojistik firma',
+    const service = new window.google.maps.places.PlacesService(
+      mapInstance.current
+    );
+
+    const request = {
+      query: trimmed,
+      region: "tr",
+    };
+
+    service.textSearch(request, (places: PlaceResult[], status: string) => {
+      setLoading(false);
+
+      if (status !== window.google.maps.places.PlacesServiceStatus.OK) {
+        setError("Arama sırasında sonuç bulunamadı veya hata oluştu.");
+        setResults([]);
+        clearMarkers();
+        return;
+      }
+
+      setResults(places || []);
+      clearMarkers();
+
+      const bounds = new window.google.maps.LatLngBounds();
+
+      (places || []).forEach((place) => {
+        const loc = place.geometry?.location;
+        if (!loc) return;
+
+        const marker = new window.google.maps.Marker({
+          map: mapInstance.current,
+          position: loc,
+          title: place.name,
+        });
+
+        markersRef.current.push(marker);
+        bounds.extend(loc);
       });
 
-      const res = await fetch(`/api/google-places?${params.toString()}`);
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Sunucu hatası');
+      if (!bounds.isEmpty()) {
+        mapInstance.current.fitBounds(bounds);
       }
-
-      const data = await res.json();
-
-      if (!data.results || data.results.length === 0) {
-        setError('Aradığınız kriterlere uygun sonuç bulunamadı.');
-        setLoading(false);
-        return;
-      }
-
-      // Mevcut listedekileri kontrol et
-      const existingCRM = JSON.parse(localStorage.getItem('firms-v1') || '[]');
-      const existingNames = existingCRM.map((f: any) => f.name);
-
-      const formatted: PlaceResult[] = data.results.map((item: any) => ({
-        id: item.id || crypto.randomUUID(),
-        name: item.name || 'İsimsiz Firma',
-        address: item.address || '',
-        phone: item.phone || '',
-        city: item.city || city,
-        website: item.website || '',
-        mapsUrl: `http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(item.name + ' ' + item.address)}`,
-        lat: item.lat || 0, // Backend'den geliyorsa al, yoksa 0
-        lng: item.lng || 0,
-        isAdded: existingNames.includes(item.name),
-      }));
-
-      setResults(formatted);
-    } catch (err: any) {
-      console.error(err);
-      setError('Arama sırasında bir hata oluştu: ' + err.message);
-    }
-
-    setLoading(false);
-  };
-
-  // 1. ADIM: Ekle butonuna basınca Modalı Aç
-  const openAddModal = (firma: PlaceResult, index: number) => {
-    const existing = JSON.parse(localStorage.getItem('firms-v1') || '[]');
-    if (existing.some((f: any) => f.name === firma.name)) {
-        alert('Bu firma zaten listenizde var.');
-        return;
-    }
-
-    // Modal formunu Google verileriyle başlat
-    setFormData({
-      name: firma.name,
-      contact: '', 
-      phone: firma.phone,
-      city: firma.city,
-      segment: 'Lojistik', // Varsayılan sektör
-      vehicleCount: '',    // Boş gelsin
-      status: 'Yeni',
-      note: `Google Araması: ${firma.address}`, 
-      address: firma.address,
-      website: firma.website,
-      nextMeetingDate: '', // Boş gelsin
-      lat: firma.lat || 0,
-      lng: firma.lng || 0
     });
+  }, []);
 
-    setCurrentFirmIndex(index);
-    setIsModalOpen(true);
+  // Sayfa ilk açıldığında URL'den gelen query varsa otomatik arama yap
+  useEffect(() => {
+    if (!scriptLoaded) return;
+    if (!initialQuery) return;
+
+    setQuery(initialQuery);
+    performSearch(initialQuery);
+  }, [scriptLoaded, initialQuery, performSearch]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!query.trim()) return;
+    performSearch(query);
   };
 
-  // 2. ADIM: Verileri Kaydet
-  const saveFromModal = () => {
-    if (!formData || currentFirmIndex === null) return;
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (!query.trim()) return;
+      performSearch(query);
+    }
+  };
 
-    const existing = JSON.parse(localStorage.getItem('firms-v1') || '[]');
+  // Sonuç satırına tıklayınca hem haritayı ortala hem detay çek
+  const handleResultClick = (place: PlaceResult) => {
+    const loc = place.geometry?.location;
+    if (loc && mapInstance.current) {
+      mapInstance.current.setCenter(loc);
+      mapInstance.current.setZoom(14);
+    }
 
-    const newFirm = {
-      id: crypto.randomUUID(),
-      ...formData, // Tüm form verileri (araç sayısı, ajanda dahil)
+    setAddMessage(null);
+
+    if (!place.place_id || !window.google?.maps?.places || !mapInstance.current) {
+      setSelectedDetails({
+        name: place.name,
+        formatted_address: place.formatted_address,
+        place_id: place.place_id,
+      });
+      return;
+    }
+
+    setDetailsLoading(true);
+
+    const service = new window.google.maps.places.PlacesService(
+      mapInstance.current
+    );
+
+    service.getDetails(
+      {
+        placeId: place.place_id,
+        fields: [
+          "name",
+          "formatted_address",
+          "formatted_phone_number",
+          "international_phone_number",
+          "website",
+          "place_id",
+        ],
+      },
+      (details: any, status: string) => {
+        setDetailsLoading(false);
+
+        if (
+          status === window.google.maps.places.PlacesServiceStatus.OK &&
+          details
+        ) {
+          setSelectedDetails({
+            name: details.name,
+            formatted_address: details.formatted_address,
+            formatted_phone_number:
+              details.formatted_phone_number ||
+              details.international_phone_number,
+            website: details.website,
+            place_id: details.place_id,
+          });
+        } else {
+          setSelectedDetails({
+            name: place.name,
+            formatted_address: place.formatted_address,
+            place_id: place.place_id,
+          });
+        }
+      }
+    );
+  };
+
+  const handleAddToCRM = () => {
+    if (!selectedDetails) return;
+    if (typeof window === "undefined") return;
+
+    const mapsUrl = selectedDetails.place_id
+      ? `https://www.google.com/maps/place/?q=place_id:${selectedDetails.place_id}`
+      : "";
+
+    let existing: CustomerForStorage[] = [];
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        existing = JSON.parse(raw);
+      }
+    } catch {
+      existing = [];
+    }
+
+    const newCustomer: CustomerForStorage = {
+      id: Date.now().toString(),
+      name: selectedDetails.name || "İsimsiz Firma",
+      contactName: "",
+      phone: selectedDetails.formatted_phone_number || "",
+      email: "",
+      address: selectedDetails.formatted_address || "",
+      website: selectedDetails.website || "",
+      brand: "",
+      discount: "",
+      locationUrl: mapsUrl,
+      source: "firma-bul",
       createdAt: new Date().toISOString(),
     };
 
-    const updated = [newFirm, ...existing];
-    localStorage.setItem('firms-v1', JSON.stringify(updated));
+    const updated = [newCustomer, ...existing];
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    setAddMessage("Bu firma CRM müşterileri arasına eklendi.");
 
-    // UI Güncelle
-    const newResults = [...results];
-    newResults[currentFirmIndex].isAdded = true;
-    setResults(newResults);
-
-    setIsModalOpen(false);
-    setFormData(null);
-    setCurrentFirmIndex(null);
+    // İstersen direkt CRM ekranına git:
+    // router.push("/dashboard");
   };
 
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        padding: '24px 14px',
-        maxWidth: '900px',
-        margin: '0 auto',
-        color: '#e5e7eb',
-        position: 'relative'
-      }}
-    >
-      <h1 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '10px' }}>
-        🔍 Akıllı Firma Bulucu
-      </h1>
-
-      {/* Arama Kutuları */}
-      <div className="teklif-form" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '12px' }}>
-        <div className="field">
-          <label>Şehir</label>
-          <input value={city} onChange={(e) => setCity(e.target.value)} placeholder="Örn: İstanbul" />
+    <div className="firma-layout">
+      {/* Üst bilgi kartı */}
+      <section className="page-card firma-header">
+        <div>
+          <h1 className="firma-title">Firma Bul</h1>
+          <p className="firma-subtitle">
+            Google Maps ve Places ile firma adı, adres veya sektöre göre arama
+            yapın. Uygun bulduğunuz firmayı tek tıkla CRM müşterisi olarak
+            ekleyin.
+          </p>
         </div>
-        <div className="field">
-          <label>Sektör / Kelime</label>
-          <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Örn: Lojistik..." />
-        </div>
-      </div>
 
-      <button
-        type="button"
-        onClick={handleSearch}
-        disabled={loading}
-        style={{
-          borderRadius: '999px',
-          padding: '10px',
-          border: '1px solid rgba(56,189,248,0.9)',
-          background: loading ? '#334155' : 'radial-gradient(circle at top, #38bdf8, #0ea5e9)',
-          color: loading ? '#94a3b8' : '#0f172a',
-          fontWeight: 600,
-          cursor: loading ? 'wait' : 'pointer',
-          width: '100%',
-          marginBottom: '16px'
-        }}
-      >
-        {loading ? 'Aranıyor...' : '🔍 Firmaları Getir'}
-      </button>
+        <form className="firma-query-box" onSubmit={handleSubmit}>
+          <div className="firma-query-label">Arama kriteri</div>
+          <input
+            type="text"
+            className="firma-query-input"
+            placeholder="Örn: lojistik firma İstanbul"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <button type="submit" className="firma-query-button">
+            Ara
+          </button>
+        </form>
+      </section>
 
-      {error && <div style={{ padding: '10px', background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5', borderRadius: '8px', marginBottom: '15px' }}>⚠️ {error}</div>}
+      {/* Hata / loading mesajları */}
+      {error && <div className="page-card firma-error">⚠️ {error}</div>}
 
-      {/* Sonuç Listesi */}
-      <div className="firma-result-wrapper">
-        {results.map((firma, i) => (
-          <div key={i} className="firma-result-card" style={{ border: firma.isAdded ? '1px solid #22c55e' : '' }}>
-            <div className="firma-result-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <div>
-                <div className="firma-result-name">{firma.name}</div>
-                <div className="firma-result-city">{firma.city}</div>
-              </div>
-              {firma.isAdded && <span style={{ fontSize: '10px', background: '#22c55e', color: '#000', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>EKLENDİ</span>}
-            </div>
-
-            <div className="firma-result-meta">
-              <span>📍 {firma.address}</span>
-              {firma.phone && <span>📞 {firma.phone}</span>}
-              {firma.website && <span>🌐 <a href={firma.website} target="_blank" rel="noreferrer" style={{ color: '#38bdf8' }}>Web</a></span>}
-            </div>
-
-            <div style={{ marginTop: '12px', display: 'flex', gap: '8px' }}>
-              {!firma.isAdded ? (
-                <button
-                  className="primary"
-                  onClick={() => openAddModal(firma, i)}
-                  style={{ flex: 1, padding: '8px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
-                >
-                  ➕ Detaylı Ekle
-                </button>
-              ) : (
-                <button
-                  disabled
-                  style={{ flex: 1, padding: '8px', fontSize: '13px', background: '#1e293b', color: '#94a3b8', border: '1px solid #334155', borderRadius: '6px', cursor: 'default' }}
-                >
-                  ✅ Kayıtlı
-                </button>
-              )}
-              
-              <a href={firma.mapsUrl} target="_blank" rel="noreferrer" style={{ padding: '8px 12px', background: '#334155', borderRadius: '6px', textDecoration: 'none', color: '#cbd5e1' }}>
-                🗺
-              </a>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* --- TAM DETAYLI EKLEME MODALI --- */}
-      {isModalOpen && formData && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          backgroundColor: 'rgba(0,0,0,0.85)', zIndex: 999,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px'
-        }}>
-          <div style={{
-            backgroundColor: '#0f172a', width: '100%', maxWidth: '600px', // Biraz daha geniş
-            borderRadius: '12px', border: '1px solid #334155', padding: '24px',
-            maxHeight: '95vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)'
-          }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '20px', color: '#38bdf8', borderBottom:'1px solid #334155', paddingBottom:'10px' }}>
-              📝 Müşteri Kartı Oluştur
-            </h2>
-
-            <div className="teklif-form" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              
-              {/* Satır 1: Firma Adı */}
-              <div className="field">
-                <label>Firma Adı</label>
-                <input 
-                  value={formData.name} 
-                  onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                  style={{fontWeight:'bold'}}
-                />
-              </div>
-
-              {/* Satır 2: Yetkili ve Telefon */}
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
-                <div className="field">
-                  <label style={{color:'#fbbf24'}}>Yetkili Kişi</label>
-                  <input 
-                    placeholder="Ad Soyad"
-                    value={formData.contact} 
-                    onChange={(e) => setFormData({...formData, contact: e.target.value})} 
-                    style={{borderColor: '#fbbf24'}}
-                  />
-                </div>
-                <div className="field">
-                  <label>Telefon</label>
-                  <input 
-                    value={formData.phone} 
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                  />
-                </div>
-              </div>
-
-              {/* Satır 3: Şehir ve Sektör */}
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
-                 <div className="field">
-                  <label>Şehir</label>
-                  <input 
-                    value={formData.city} 
-                    onChange={(e) => setFormData({...formData, city: e.target.value})} 
-                  />
-                </div>
-                <div className="field">
-                  <label>Sektör</label>
-                  <input 
-                    value={formData.segment} 
-                    onChange={(e) => setFormData({...formData, segment: e.target.value})} 
-                  />
-                </div>
-              </div>
-
-              {/* Satır 4: Araç Sayısı ve Durum */}
-              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
-                <div className="field">
-                  <label>Araç Sayısı</label>
-                  <input 
-                    type="number"
-                    placeholder="0"
-                    value={formData.vehicleCount} 
-                    onChange={(e) => setFormData({...formData, vehicleCount: e.target.value})} 
-                  />
-                </div>
-                <div className="field">
-                    <label>Durum</label>
-                    <select 
-                        value={formData.status}
-                        onChange={(e) => setFormData({...formData, status: e.target.value})}
-                        style={{
-                            background:'#1e293b', color:'white', border:'1px solid #334155', 
-                            padding:'12px', borderRadius:'8px', cursor:'pointer'
-                        }}
-                    >
-                        {STATUS_OPTIONS.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
-                </div>
-              </div>
-
-              {/* Satır 5: Ajanda / Randevu */}
-              <div className="field">
-                <label style={{display:'flex', alignItems:'center', gap:'5px'}}>
-                   📅 Ajandaya Kaydet (Randevu Tarihi)
-                </label>
-                <input 
-                  type="datetime-local"
-                  value={formData.nextMeetingDate}
-                  onChange={(e) => setFormData({...formData, nextMeetingDate: e.target.value})}
-                  style={{background:'#0f172a', borderColor:'#38bdf8'}}
-                />
-              </div>
-
-              {/* Satır 6: Notlar */}
-              <div className="field">
-                <label>Görüşme Notları</label>
-                <textarea 
-                  rows={3}
-                  placeholder="Detaylar, teklif durumu vb..."
-                  value={formData.note}
-                  onChange={(e) => setFormData({...formData, note: e.target.value})}
-                  style={{
-                    width:'100%', background:'#1e293b', border:'1px solid #334155', 
-                    borderRadius:'8px', padding:'10px', color:'white', fontSize:'14px'
-                  }}
-                />
-              </div>
-
-              {/* Satır 7: Adres (Otomatik ama düzenlenebilir) */}
-              <div className="field">
-                <label>Konum / Adres</label>
-                <textarea 
-                  rows={2}
-                  value={formData.address}
-                  onChange={(e) => setFormData({...formData, address: e.target.value})}
-                  style={{fontSize:'12px', color:'#94a3b8', background:'#0f172a'}}
-                />
-              </div>
-
-              {/* Butonlar */}
-              <div style={{ display: 'flex', gap: '12px', marginTop: '10px', borderTop:'1px solid #334155', paddingTop:'20px' }}>
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  style={{ 
-                    flex: 1, padding: '14px', background: '#334155', color: '#cbd5e1', 
-                    borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight:'600'
-                  }}
-                >
-                  İptal
-                </button>
-                <button 
-                  onClick={saveFromModal}
-                  style={{ 
-                    flex: 2, padding: '14px', 
-                    background: 'radial-gradient(circle at top, #22c55e, #16a34a)', 
-                    color: '#fff', borderRadius: '8px', border: 'none', 
-                    fontWeight: 'bold', cursor: 'pointer', fontSize:'15px'
-                  }}
-                >
-                  💾 Müşteriyi ve Ajandayı Kaydet
-                </button>
-              </div>
-
-            </div>
-          </div>
+      {loading && (
+        <div className="page-card firma-loading">
+          Arama yapılıyor, lütfen bekleyin...
         </div>
       )}
-    </main>
+
+      {addMessage && (
+        <div className="page-card firma-added-info">
+          ✅ {addMessage}{" "}
+          <button
+            type="button"
+            className="firma-added-link"
+            onClick={() => router.push("/dashboard")}
+          >
+            CRM ekranına git
+          </button>
+        </div>
+      )}
+
+      {/* Grid: sonuçlar + harita */}
+      <div className="firma-grid">
+        <section className="page-card firma-results">
+          <h2 className="firma-section-title">Sonuçlar</h2>
+          <p className="firma-section-subtitle">
+            Liste üzerinden bir firma satırına tıkladığınızda harita o firmaya
+            odaklanır ve iletişim bilgilerini sağda görebilirsiniz.
+          </p>
+
+          <div className="firma-results-inner">
+            {results.length === 0 && !loading && !error && (
+              <div className="firma-result-empty">
+                Henüz bir sonuç yok. Yukarıdan arama yapabilirsiniz.
+              </div>
+            )}
+
+            {results.map((place) => (
+              <button
+                key={place.place_id}
+                type="button"
+                className="firma-result-item"
+                onClick={() => handleResultClick(place)}
+              >
+                <div className="firma-result-name">{place.name}</div>
+                <div className="firma-result-meta">
+                  {place.formatted_address || "Adres bilgisi yok"}
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="page-card firma-map">
+          <h2 className="firma-section-title">Harita & İletişim</h2>
+          <p className="firma-section-subtitle">
+            Seçtiğiniz firmalar harita üzerinde işaretlenir ve iletişim
+            detayları aşağıda gösterilir. Uygun firma ise CRM müşterisi olarak
+            ekleyebilirsiniz.
+          </p>
+
+          <div className="firma-map-container">
+            <div ref={mapRef} className="firma-map-canvas" />
+          </div>
+
+          {/* İLETİŞİM BLOĞU */}
+          <div className="firma-contact-card">
+            <div className="firma-contact-title">İletişim Bilgileri</div>
+
+            {detailsLoading && (
+              <div className="firma-contact-row">
+                İletişim bilgileri yükleniyor...
+              </div>
+            )}
+
+            {!detailsLoading && !selectedDetails && (
+              <div className="firma-contact-empty">
+                Soldan bir firma seçtiğinizde iletişim bilgileri burada
+                görünecek.
+              </div>
+            )}
+
+            {!detailsLoading && selectedDetails && (
+              <>
+                <div className="firma-contact-name">
+                  {selectedDetails.name || "Firma adı yok"}
+                </div>
+
+                {selectedDetails.formatted_address && (
+                  <div className="firma-contact-row">
+                    📍 {selectedDetails.formatted_address}
+                  </div>
+                )}
+
+                {selectedDetails.formatted_phone_number && (
+                  <div className="firma-contact-row">
+                    📞{" "}
+                    <a
+                      href={`tel:${selectedDetails.formatted_phone_number}`}
+                      className="firma-contact-link"
+                    >
+                      {selectedDetails.formatted_phone_number}
+                    </a>
+                  </div>
+                )}
+
+                {selectedDetails.website && (
+                  <div className="firma-contact-row">
+                    🌐{" "}
+                    <a
+                      href={selectedDetails.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="firma-contact-link"
+                    >
+                      Web sitesini aç
+                    </a>
+                  </div>
+                )}
+
+                {selectedDetails.place_id && (
+                  <div className="firma-contact-row">
+                    🗺️{" "}
+                    <a
+                      href={`https://www.google.com/maps/place/?q=place_id:${selectedDetails.place_id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="firma-contact-link"
+                    >
+                      Google Maps&apos;te aç
+                    </a>
+                  </div>
+                )}
+
+                {!selectedDetails.formatted_phone_number &&
+                  !selectedDetails.website &&
+                  !selectedDetails.place_id && (
+                    <div className="firma-contact-row">
+                      Bu firma için ek iletişim bilgisi bulunamadı.
+                    </div>
+                  )}
+
+                {/* CRM'E EKLE BUTONU */}
+                <button
+                  type="button"
+                  className="firma-contact-add-btn"
+                  onClick={handleAddToCRM}
+                >
+                  ➕ Bu firmayı CRM müşterisi olarak ekle
+                </button>
+              </>
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
   );
 }
