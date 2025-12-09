@@ -54,7 +54,12 @@ export default function FirmaBulClient() {
   const router = useRouter();
   const initialQuery = searchParams.get("query") || "";
 
-  const [query, setQuery] = useState(initialQuery);
+  // 🔹 Yeni alanlar: Şehir, İlçe, Sektör, Firma Adı
+  const [city, setCity] = useState("");
+  const [district, setDistrict] = useState("");
+  const [sector, setSector] = useState("");
+  const [name, setName] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<PlaceResult[]>([]);
@@ -114,7 +119,7 @@ export default function FirmaBulClient() {
   useEffect(() => {
     if (!scriptLoaded) return;
     if (!mapRef.current) return;
-    if (mapInstance.current) return; // zaten oluşturuldu
+    if (mapInstance.current) return;
 
     const center = { lat: 39.0, lng: 35.0 }; // Türkiye ortalama
 
@@ -127,10 +132,21 @@ export default function FirmaBulClient() {
     });
   }, [scriptLoaded]);
 
-  // Eski marker'ları temizle
   const clearMarkers = () => {
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
+  };
+
+  // Ortak: inputlardan arama metni oluştur
+  const buildSearchText = () => {
+    const parts: string[] = [];
+
+    if (sector.trim()) parts.push(sector.trim());
+    if (name.trim()) parts.push(name.trim());
+    if (district.trim()) parts.push(district.trim());
+    if (city.trim()) parts.push(city.trim());
+
+    return parts.join(" ").trim();
   };
 
   // Arama fonksiyonu
@@ -142,7 +158,7 @@ export default function FirmaBulClient() {
 
     const trimmed = searchText.trim();
     if (!trimmed) {
-      setError("Lütfen arama kutusuna bir değer girin.");
+      setError("Lütfen en az bir arama kriteri girin.");
       return;
     }
 
@@ -195,26 +211,32 @@ export default function FirmaBulClient() {
     });
   }, []);
 
-  // Sayfa ilk açıldığında URL'den gelen query varsa otomatik arama yap
+  // Sayfa ilk açıldığında URL'den gelen query varsa (ör: üst arama çubuğundan)
   useEffect(() => {
     if (!scriptLoaded) return;
     if (!initialQuery) return;
 
-    setQuery(initialQuery);
+    // initialQuery'yi sektör olarak kabul edip aramayı tetikliyoruz
+    setSector(initialQuery);
     performSearch(initialQuery);
   }, [scriptLoaded, initialQuery, performSearch]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
-    performSearch(query);
+    const text = buildSearchText();
+    if (!text) {
+      setError("Lütfen en az bir arama kriteri girin.");
+      return;
+    }
+    performSearch(text);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      if (!query.trim()) return;
-      performSearch(query);
+      const text = buildSearchText();
+      if (!text) return;
+      performSearch(text);
     }
   };
 
@@ -327,22 +349,81 @@ export default function FirmaBulClient() {
         <div>
           <h1 className="firma-title">Firma Bul</h1>
           <p className="firma-subtitle">
-            Google Maps ve Places ile firma adı, adres veya sektöre göre arama
+            Google Maps ve Places ile il, ilçe, sektör ve firma adına göre arama
             yapın. Uygun bulduğunuz firmayı tek tıkla CRM müşterisi olarak
             ekleyin.
           </p>
         </div>
 
+        {/* 🔹 Ayrılmış arama kriterleri */}
         <form className="firma-query-box" onSubmit={handleSubmit}>
-          <div className="firma-query-label">Arama kriteri</div>
-          <input
-            type="text"
-            className="firma-query-input"
-            placeholder="Örn: lojistik firma İstanbul"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
+          <div className="firma-query-label">Arama kriterleri</div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 8,
+              width: "100%",
+            }}
+          >
+            <div className="crm-form-group">
+              <label>
+                Şehir (İl)
+                <input
+                  type="text"
+                  className="firma-query-input"
+                  placeholder="Örn: İstanbul, Ankara"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+              </label>
+            </div>
+
+            <div className="crm-form-group">
+              <label>
+                İlçe
+                <input
+                  type="text"
+                  className="firma-query-input"
+                  placeholder="Örn: Tuzla, Çankaya"
+                  value={district}
+                  onChange={(e) => setDistrict(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+              </label>
+            </div>
+
+            <div className="crm-form-group">
+              <label>
+                Sektör
+                <input
+                  type="text"
+                  className="firma-query-input"
+                  placeholder="Örn: lojistik, taşımacılık, akaryakıt"
+                  value={sector}
+                  onChange={(e) => setSector(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+              </label>
+            </div>
+
+            <div className="crm-form-group">
+              <label>
+                Firma Adı (opsiyonel)
+                <input
+                  type="text"
+                  className="firma-query-input"
+                  placeholder="Örn: ABC Lojistik"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+              </label>
+            </div>
+          </div>
+
           <button type="submit" className="firma-query-button">
             Ara
           </button>
@@ -366,7 +447,7 @@ export default function FirmaBulClient() {
             className="firma-added-link"
             onClick={() => router.push("/dashboard")}
           >
-            CRM ekranına git
+            Müşteri yönetimi ekranına git
           </button>
         </div>
       )}
