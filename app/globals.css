@@ -2658,3 +2658,307 @@ body {
     opacity: 0.85;
   }
 }
+/* ===== Mobil uyum & tipografi iyileştirme ===== */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  /* Masaüstü için makul temel font */
+  font-size: 15px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+/* Küçük ekranlarda fontu hafif büyüt */
+@media (max-width: 768px) {
+  html,
+  body {
+    font-size: 16px;
+  }
+
+  .page-card {
+    padding: 14px 12px;
+  }
+
+  .crm-title,
+  .firma-title,
+  .home-title {
+    font-size: 18px;
+  }
+
+  .crm-subtitle,
+  .firma-subtitle,
+  .home-subtitle {
+    font-size: 13px;
+  }
+}
+
+/* Açık (beyaz) temada kontrastı güçlendir */
+.app-root.theme-light {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.app-root.theme-light .page-card {
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+}
+
+.app-root.theme-light .crm-subtitle,
+.app-root.theme-light .firma-subtitle,
+.app-root.theme-light .crm-section-subtitle,
+.app-root.theme-light .firma-section-subtitle {
+  color: #4b5563;
+}
+
+.app-root.theme-light .crm-list-empty,
+.app-root.theme-light .firma-result-empty {
+  color: #6b7280;
+}
+
+/* Küçük yazıların çok sönük olmaması için */
+.app-root.theme-light .text-muted,
+.app-root.theme-light .crm-header-note {
+  color: #6b7280;
+}
+
+/* Buton ve chip yazıları mobilde daha okunabilir olsun */
+.crm-status-chip,
+.crm-submit-btn,
+.firma-query-button,
+.firma-contact-add-btn {
+  font-size: 13px;
+}
+/* === MOBİL CİLALAMA: FONT, KART, MENÜ BOYUTLARI === */
+
+/* Genel base ayar */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-size: 15px;
+}
+
+/* Küçük ekranlarda her şeyi bir tık büyüt */
+@media (max-width: 768px) {
+  html,
+  body {
+    font-size: 16px;
+  }
+
+  .page-card {
+    padding: 16px 14px;
+    border-radius: 14px;
+  }
+
+  /* Başlıklar */
+  .crm-title,
+  .firma-title,
+  .home-title {
+    font-size: 19px;
+  }
+
+  .crm-subtitle,
+  .firma-subtitle,
+  .home-subtitle {
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  .crm-section-title,
+  .firma-section-title {
+    font-size: 16px;
+  }
+
+  .crm-section-subtitle,
+  .firma-section-subtitle {
+    font-size: 13px;
+  }
+
+  /* Üst bar – buton ve arama alanını büyüt */
+  .app-topbar {
+    height: 56px;
+  }
+
+  .icon-btn {
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 18px;
+  }
+
+  .app-search {
+    height: 40px;
+    font-size: 14px;
+    padding: 0 10px;
+  }
+
+  .app-avatar {
+    width: 30px;
+    height: 30px;
+  }
+
+  /* Hamburger menü elemanları */
+  .app-drawer-item {
+    font-size: 14px;
+    padding: 10px 14px;
+  }
+
+  .app-drawer-item-icon {
+    font-size: 18px;
+    margin-right: 8px;
+  }
+
+  /* CRM list kartları */
+  .crm-card {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .crm-card-name {
+    font-size: 14.5px;
+  }
+
+  .crm-card-row {
+    font-size: 13px;
+  }
+
+  .crm-card-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+
+  /* Detay kartı */
+  .crm-detail-card {
+    padding: 12px;
+    border-radius: 14px;
+    font-size: 13px;
+  }
+
+  .crm-detail-title {
+    font-size: 16px;
+  }
+
+  .crm-detail-row {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .crm-status-pill {
+    font-size: 12px;
+    padding: 4px 9px;
+  }
+
+  .crm-status-pill--small {
+    font-size: 11px;
+  }
+
+  .crm-status-chip {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+
+  /* Form elemanları */
+  .crm-input,
+  .firma-query-input {
+    min-height: 42px;
+    font-size: 14px;
+    padding: 8px 10px;
+  }
+
+  .crm-textarea,
+  .crm-note-textarea {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+
+  .crm-form-group label {
+    font-size: 12px;
+  }
+
+  .crm-submit-btn,
+  .crm-note-save-btn,
+  .crm-note-cancel-btn,
+  .firma-query-button,
+  .firma-contact-add-btn {
+    font-size: 13px;
+    min-height: 40px;
+    padding: 8px 14px;
+    border-radius: 999px;
+  }
+
+  /* Firma Bul liste kartları */
+  .firma-result-item {
+    padding: 10px 10px;
+    border-radius: 10px;
+  }
+
+  .firma-result-name {
+    font-size: 14px;
+  }
+
+  .firma-result-meta {
+    font-size: 12px;
+  }
+
+  /* Firma Bul iletişim bloğu */
+  .firma-contact-card {
+    font-size: 13px;
+  }
+  .firma-contact-name {
+    font-size: 15px;
+  }
+
+  /* Ana ekrandaki istatistik / durum kartları */
+  .home-stat-card {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  /* Haftalık plan, rapor kartları benzer boyutta dursun */
+  .plan-card,
+  .rapor-card {
+    font-size: 13px;
+    padding: 12px;
+    border-radius: 14px;
+  }
+}
+
+/* Açık (beyaz) temada kontrastı güçlendir */
+.app-root.theme-light {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.app-root.theme-light .page-card {
+  background: #ffffff;
+  color: #111827;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.app-root.theme-light .crm-subtitle,
+.app-root.theme-light .firma-subtitle,
+.app-root.theme-light .crm-section-subtitle,
+.app-root.theme-light .firma-section-subtitle {
+  color: #4b5563;
+}
+
+.app-root.theme-light .crm-list-empty,
+.app-root.theme-light .firma-result-empty {
+  color: #6b7280;
+}
+
+.app-root.theme-light .crm-header-note {
+  color: #6b7280;
+}
+
+/* Buton ve chip yazıları daha okunaklı olsun */
+.crm-status-chip,
+.crm-submit-btn,
+.firma-query-button,
+.firma-contact-add-btn {
+  font-weight: 500;
+}

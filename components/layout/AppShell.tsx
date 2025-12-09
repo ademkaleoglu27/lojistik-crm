@@ -36,6 +36,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  // Tema yükle
   useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = window.localStorage.getItem("crm-theme");
@@ -44,10 +45,23 @@ export default function AppShell({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Tema değişince kaydet
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("crm-theme", theme);
   }, [theme]);
+
+  // 🔹 PWA için service worker kaydı
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker
+        .register("/sw.js")
+        .catch((err) => {
+          console.warn("Service worker kaydedilemedi:", err);
+        });
+    }
+  }, []);
 
   const toggleMenu = () => {
     setMenuOpen((prev) => !prev);
@@ -88,16 +102,44 @@ export default function AppShell({ children }: { children: ReactNode }) {
     setProfileOpen(false);
   };
 
+  const handleHome = () => {
+    router.push("/");
+    setMenuOpen(false);
+  };
+
+  const canGoBack = pathname !== "/";
+
   return (
     <div className={`app-root theme-${theme}`}>
       {/* ÜST BAR */}
       <header className="app-topbar">
         <div className="app-topbar-left">
+          {canGoBack && (
+            <button
+              className="icon-btn"
+              onClick={() => router.back()}
+              type="button"
+            >
+              ←
+            </button>
+          )}
+
           <button className="icon-btn" onClick={toggleMenu} type="button">
             ☰
           </button>
 
-          <div className="navbar__brand">
+          {/* LOGO / ANA SAYFA BUTONU */}
+          <button
+            type="button"
+            onClick={handleHome}
+            className="navbar__brand"
+            style={{
+              border: "none",
+              background: "transparent",
+              padding: 0,
+              cursor: "pointer",
+            }}
+          >
             <div className="navbar__logo">LC</div>
             <div className="navbar__brand-text">
               <div className="navbar__title">Lojistik CRM</div>
@@ -105,7 +147,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
                 Müşteri, teklif ve ajanda yönetimi
               </div>
             </div>
-          </div>
+          </button>
         </div>
 
         <div className="app-topbar-center">
@@ -194,7 +236,27 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
           <nav className="app-drawer">
             <div className="app-drawer-header">
-              <span className="app-drawer-title">Menü</span>
+              {/* Soldaki menülerin üstüne logo / başlık */}
+              <button
+                type="button"
+                onClick={handleHome}
+                className="app-drawer-title"
+                style={{
+                  border: "none",
+                  background: "transparent",
+                  textAlign: "left",
+                  padding: 0,
+                  cursor: "pointer",
+                }}
+              >
+                <div style={{ fontSize: 14, fontWeight: 700 }}>
+                  Lojistik CRM
+                </div>
+                <div style={{ fontSize: 11, opacity: 0.7 }}>
+                  Müşteri ve saha takibi
+                </div>
+              </button>
+
               <button className="icon-btn" onClick={toggleMenu} type="button">
                 ✕
               </button>

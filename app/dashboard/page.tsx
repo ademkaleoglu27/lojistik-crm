@@ -28,6 +28,7 @@ type Customer = {
   website: string;
   brand: string;
   discount: string;
+  paymentTerm?: string; // 🔹 Mevcut vade
   locationUrl: string;
   source: "manual" | "firma-bul";
   createdAt: string;
@@ -68,6 +69,7 @@ function loadCustomers(): Customer[] {
         website: c.website || "",
         brand: c.brand || "",
         discount: c.discount || "",
+        paymentTerm: c.paymentTerm || "", // 🔹 eski kayıtlarda yoksa "" gelir
         locationUrl: c.locationUrl || "",
         source: c.source === "firma-bul" ? "firma-bul" : "manual",
         createdAt: c.createdAt || new Date().toISOString(),
@@ -116,6 +118,7 @@ export default function DashboardPage() {
     website: "",
     brand: "",
     discount: "",
+    paymentTerm: "", // 🔹 form tarafına eklendi
     locationUrl: "",
     notes: "",
   });
@@ -178,6 +181,7 @@ export default function DashboardPage() {
       website: form.website.trim(),
       brand: form.brand.trim(),
       discount: form.discount.trim(),
+      paymentTerm: form.paymentTerm.trim(), // 🔹 kaydet
       locationUrl: form.locationUrl.trim(),
       source: "manual",
       createdAt: nowIso,
@@ -207,6 +211,7 @@ export default function DashboardPage() {
       website: "",
       brand: "",
       discount: "",
+      paymentTerm: "",
       locationUrl: "",
       notes: "",
     });
@@ -436,6 +441,10 @@ export default function DashboardPage() {
                 <span>{selectedCustomer.discount || "Belirtilmemiş"}</span>
               </div>
               <div className="crm-detail-row">
+                🧾 Mevcut Vade:{" "}
+                <span>{selectedCustomer.paymentTerm || "Belirtilmemiş"}</span>
+              </div>
+              <div className="crm-detail-row">
                 📍 Adres:{" "}
                 <span>{selectedCustomer.address || "Belirtilmemiş"}</span>
               </div>
@@ -638,6 +647,7 @@ export default function DashboardPage() {
                 <label>
                   İrtibat Telefon
                   <input
+                    type="tel" // 🔹 mobilde numara klavyesi
                     name="phone"
                     value={form.phone}
                     onChange={handleChange}
@@ -717,16 +727,29 @@ export default function DashboardPage() {
               </div>
               <div className="crm-form-group">
                 <label>
-                  Konum Linki (Google Maps)
+                  Mevcut Vade
                   <input
-                    name="locationUrl"
-                    value={form.locationUrl}
+                    name="paymentTerm"
+                    value={form.paymentTerm}
                     onChange={handleChange}
                     className="crm-input"
-                    placeholder="https://maps..."
+                    placeholder="Örn: 30 gün, 45 gün"
                   />
                 </label>
               </div>
+            </div>
+
+            <div className="crm-form-group">
+              <label>
+                Konum Linki (Google Maps)
+                <input
+                  name="locationUrl"
+                  value={form.locationUrl}
+                  onChange={handleChange}
+                  className="crm-input"
+                  placeholder="https://maps..."
+                />
+              </label>
             </div>
 
             <div className="crm-form-group">

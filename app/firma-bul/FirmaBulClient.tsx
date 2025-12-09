@@ -54,7 +54,7 @@ export default function FirmaBulClient() {
   const router = useRouter();
   const initialQuery = searchParams.get("query") || "";
 
-  // 🔹 Yeni alanlar: Şehir, İlçe, Sektör, Firma Adı
+  // Arama kriterleri
   const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
   const [sector, setSector] = useState("");
@@ -137,7 +137,6 @@ export default function FirmaBulClient() {
     markersRef.current = [];
   };
 
-  // Ortak: inputlardan arama metni oluştur
   const buildSearchText = () => {
     const parts: string[] = [];
 
@@ -211,12 +210,11 @@ export default function FirmaBulClient() {
     });
   }, []);
 
-  // Sayfa ilk açıldığında URL'den gelen query varsa (ör: üst arama çubuğundan)
+  // URL'den gelen query (üst arama çubuğundan)
   useEffect(() => {
     if (!scriptLoaded) return;
     if (!initialQuery) return;
 
-    // initialQuery'yi sektör olarak kabul edip aramayı tetikliyoruz
     setSector(initialQuery);
     performSearch(initialQuery);
   }, [scriptLoaded, initialQuery, performSearch]);
@@ -240,7 +238,6 @@ export default function FirmaBulClient() {
     }
   };
 
-  // Sonuç satırına tıklayınca hem haritayı ortala hem detay çek
   const handleResultClick = (place: PlaceResult) => {
     const loc = place.geometry?.location;
     if (loc && mapInstance.current) {
@@ -304,9 +301,12 @@ export default function FirmaBulClient() {
     );
   };
 
+  // 🔹 Firma Bul -> CRM'e ekle -> Müşteri kartına git
   const handleAddToCRM = () => {
     if (!selectedDetails) return;
     if (typeof window === "undefined") return;
+
+    const newId = Date.now().toString();
 
     const mapsUrl = selectedDetails.place_id
       ? `https://www.google.com/maps/place/?q=place_id:${selectedDetails.place_id}`
@@ -323,7 +323,7 @@ export default function FirmaBulClient() {
     }
 
     const newCustomer: CustomerForStorage = {
-      id: Date.now().toString(),
+      id: newId,
       name: selectedDetails.name || "İsimsiz Firma",
       contactName: "",
       phone: selectedDetails.formatted_phone_number || "",
@@ -340,6 +340,9 @@ export default function FirmaBulClient() {
     const updated = [newCustomer, ...existing];
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
     setAddMessage("Bu firma CRM müşterileri arasına eklendi.");
+
+    // ➜ Direkt müşteri kartına git
+    router.push(`/musteri/${newId}`);
   };
 
   return (
@@ -355,7 +358,7 @@ export default function FirmaBulClient() {
           </p>
         </div>
 
-        {/* 🔹 Ayrılmış arama kriterleri */}
+        {/* Arama kriterleri */}
         <form className="firma-query-box" onSubmit={handleSubmit}>
           <div className="firma-query-label">Arama kriterleri</div>
 
@@ -441,14 +444,7 @@ export default function FirmaBulClient() {
 
       {addMessage && (
         <div className="page-card firma-added-info">
-          ✅ {addMessage}{" "}
-          <button
-            type="button"
-            className="firma-added-link"
-            onClick={() => router.push("/dashboard")}
-          >
-            Müşteri yönetimi ekranına git
-          </button>
+          ✅ {addMessage}
         </div>
       )}
 
