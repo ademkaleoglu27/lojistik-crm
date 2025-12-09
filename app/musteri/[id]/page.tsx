@@ -10,6 +10,14 @@ type CustomerStatus =
   | "degerlendiriyor"
   | "sozlesme";
 
+/** Timeline event tipi çok katı olmasın diye type: string bıraktık */
+type TimelineEvent = {
+  id: string;
+  type: string;
+  label: string;
+  at: string;
+};
+
 type Customer = {
   id: string;
   name: string;
@@ -20,75 +28,115 @@ type Customer = {
   website: string;
   brand: string;
   discount: string;
-  paymentTerm?: string; // 🔹 Mevcut vade
+  paymentTerm?: string;
   locationUrl: string;
   source: "manual" | "firma-bul";
   createdAt: string;
   notes?: string;
   status?: CustomerStatus;
+  timeline?: TimelineEvent[];
 };
 
 const STORAGE_KEY = "crm-customers";
 
-const statusOptions: { value: CustomerStatus; label: string; color: string }[] =
+const STATUS_OPTIONS: { value: CustomerStatus; label: string; color: string }[] =
   [
     { value: "gorusulmedi", label: "Potansiyel", color: "#f97316" },
-    { value: "degerlendiriyor", label: "Sıcak / Değerlendiriyor", color: "#22c55e" },
+    {
+      value: "degerlendiriyor",
+      label: "Sıcak / Değerlendiriyor",
+      color: "#22c55e",
+    },
     { value: "gorusuldu_olumlu", label: "Olumlu", color: "#0ea5e9" },
     { value: "gorusuldu_olumsuz", label: "Olumsuz", color: "#ef4444" },
     { value: "sozlesme", label: "Sözleşme Yapıldı", color: "#22c55e" },
   ];
 
+function getStatusLabel(status: CustomerStatus | undefined): string {
+  const found = STATUS_OPTIONS.find((s) => s.value === status);
+  if (!found) return "Potansiyel";
+  return found.label;
+}
+
+function loadCustomers(): Customer[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw) as Customer[];
+  } catch {
+    return [];
+  }
+}
+
+function saveCustomers(customers: Customer[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(customers));
+}
+
 export default function MusteriDetayPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const id = params?.id;
+
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [noteDraft, setNoteDraft] = useState("");
+  const [noteEditMode, setNoteEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const id = params?.id;
-
+  // İlk yükleme: müşteri listesi + seçilen müşteri
   useEffect(() => {
     if (!id) return;
-    if (typeof window === "undefined") return;
-
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        setError("Kayıtlı müşteri bulunamadı.");
-        setLoading(false);
-        return;
-      }
-      const list = JSON.parse(raw) as Customer[];
-
-      const found = list.find((c) => c.id === String(id));
-      if (!found) {
-        setError("Bu ID ile müşteri bulunamadı.");
-        setLoading(false);
-        return;
-      }
-
-      setCustomer({
-        notes: "",
-        status: "gorusulmedi",
-        contactName: "",
-        phone: "",
-        email: "",
-        address: "",
-        website: "",
-        brand: "",
-        discount: "",
-        paymentTerm: "",
-        locationUrl: "",
-        ...found,
-      });
-      setLoading(false);
-    } catch {
-      setError("Müşteri verisi okunurken hata oluştu.");
-      setLoading(false);
+    const data = loadCustomers();
+    setCustomers(data);
+    const found = data.find((c) => String(c.id) === String(id));
+    if (!found) {
+      setError("Bu ID ile müşteri bulunamadı.");
+      return;
     }
+
+    const baseTimeline: TimelineEvent[] = Array.isArray(found.timeline)
+      ? (found.timeline as TimelineEvent[])
+      : [];
+
+    const safeTimeline: TimelineEvent[] =
+      baseTimeline.length === 0
+        ? [
+            {
+              id: `${found.id}-init`,
+              type: "created",
+              label:
+                found.source === "firma-bul"
+                  ? "Müşteri kartı oluşturuldu (Kaynak: Firma Bul)"
+                  : "Müşteri kartı oluşturuldu (Manuel)",
+              at: found.createdAt || new Date().toISOString(),
+            },
+          ]
+        : baseTimeline;
+
+    const safeCustomer: Customer = {
+      ...found,
+      name: found.name || "",
+      contactName: found.contactName || "",
+      phone: found.phone || "",
+      email: found.email || "",
+      address: found.address || "",
+      website: found.website || "",
+      brand: found.brand || "",
+      discount: found.discount || "",
+      paymentTerm: found.paymentTerm || "",
+      locationUrl: found.locationUrl || "",
+      createdAt: found.createdAt || new Date().toISOString(),
+      notes: found.notes || "",
+      status: found.status || "gorusulmedi",
+      timeline: safeTimeline,
+    };
+
+    setCustomer(safeCustomer);
+    setNoteDraft(safeCustomer.notes || "");
   }, [id]);
 
   const createdAtText = useMemo(() => {
@@ -103,52 +151,79 @@ export default function MusteriDetayPage() {
     }
   }, [customer?.createdAt]);
 
+  const sortedTimeline: TimelineEvent[] = useMemo(() => {
+    if (!customer?.timeline) return [];
+    return [...customer.timeline].sort(
+      (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()
+    );
+  }, [customer?.timeline]);
+
   const handleChange = (field: keyof Customer, value: string) => {
-    setCustomer((prev) => (prev ? { ...prev, [field]: value } : prev));
-  };
-
-  const handleStatusChange = (value: CustomerStatus) => {
-    setCustomer((prev) => (prev ? { ...prev, status: value } : prev));
-  };
-
-  const handleSave = () => {
     if (!customer) return;
-    if (typeof window === "undefined") return;
+    setCustomer({ ...customer, [field]: value });
+  };
 
-    setSaving(true);
-    setMessage(null);
-    setError(null);
+  const handleStatusChange = (status: CustomerStatus) => {
+    if (!customer) return;
+    const nowIso = new Date().toISOString();
+    const newTimeline: TimelineEvent[] = [
+      ...(customer.timeline || []),
+      {
+        id: `${customer.id}-status-${nowIso}`,
+        type: "status",
+        label: `Durum: ${getStatusLabel(status)}`,
+        at: nowIso,
+      },
+    ];
+    setCustomer({ ...customer, status, timeline: newTimeline });
+  };
 
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      const list: Customer[] = raw ? JSON.parse(raw) : [];
-
-      const updatedList = list.map((c) =>
-        c.id === customer.id ? customer : c
-      );
-
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedList));
-      setSaving(false);
-      setMessage("Müşteri kartı başarıyla kaydedildi.");
-    } catch {
-      setSaving(false);
-      setError("Müşteri kaydedilirken bir hata oluştu.");
-    }
+  const handleSaveNote = () => {
+    if (!customer) return;
+    const nowIso = new Date().toISOString();
+    const newNotes = noteDraft.trim();
+    const newTimeline: TimelineEvent[] = [
+      ...(customer.timeline || []),
+      {
+        id: `${customer.id}-note-${nowIso}`,
+        type: "note",
+        label: "Not güncellendi",
+        at: nowIso,
+      },
+    ];
+    setCustomer({ ...customer, notes: newNotes, timeline: newTimeline });
+    setNoteEditMode(false);
   };
 
   const handleBack = () => {
     router.back();
   };
 
-  if (loading) {
-    return <div className="page-card">Müşteri kartı yükleniyor...</div>;
-  }
+  const handleSave = () => {
+    if (!customer) return;
+    setSaving(true);
+    setMessage(null);
+    setError(null);
 
-  if (error || !customer) {
+    try {
+      const updatedList = customers.map((c) =>
+        String(c.id) === String(customer.id) ? customer : c
+      );
+      setCustomers(updatedList);
+      saveCustomers(updatedList);
+      setSaving(false);
+      setMessage("Müşteri kartı kaydedildi.");
+    } catch (e) {
+      setSaving(false);
+      setError("Müşteri kaydedilirken bir hata oluştu.");
+    }
+  };
+
+  if (error && !customer) {
     return (
       <div className="page-card">
         <div style={{ marginBottom: 8, color: "#ef4444", fontSize: 13 }}>
-          {error || "Müşteri bulunamadı."}
+          {error}
         </div>
         <button
           type="button"
@@ -161,9 +236,13 @@ export default function MusteriDetayPage() {
     );
   }
 
+  if (!customer) {
+    return <div className="page-card">Müşteri kartı yükleniyor...</div>;
+  }
+
   return (
     <div className="page-card">
-      {/* ÜST BAR + GERİ TUŞU */}
+      {/* ÜST BAR + GERİ */}
       <div
         style={{
           display: "flex",
@@ -231,7 +310,7 @@ export default function MusteriDetayPage() {
             fontSize: 11,
           }}
         >
-          {statusOptions.map((s) => {
+          {STATUS_OPTIONS.map((s) => {
             const active = customer.status === s.value;
             return (
               <button
@@ -309,7 +388,6 @@ export default function MusteriDetayPage() {
               >
                 Bu numarayı ara
               </a>
-              {"  "} (Tarayıcı, telefon uygulamasını açar.)
             </div>
           )}
         </div>
@@ -404,14 +482,83 @@ export default function MusteriDetayPage() {
       <section className="crm-form-group" style={{ marginBottom: 12 }}>
         <label>
           Notlar
-          <textarea
-            className="crm-textarea"
-            rows={3}
-            value={customer.notes || ""}
-            onChange={(e) => handleChange("notes", e.target.value)}
-            placeholder="Görüşme notları, rakip bilgisi, özel şartlar..."
-          />
+          {noteEditMode ? (
+            <textarea
+              className="crm-textarea"
+              rows={3}
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.target.value)}
+              placeholder="Görüşme notları, rakip bilgisi, özel şartlar..."
+            />
+          ) : (
+            <pre className="crm-detail-notes-text">
+              {customer.notes && customer.notes.trim() !== ""
+                ? customer.notes
+                : "Bu müşteri için henüz not eklenmemiş."}
+            </pre>
+          )}
         </label>
+        <div style={{ marginTop: 6, display: "flex", gap: 8 }}>
+          {!noteEditMode && (
+            <button
+              type="button"
+              className="crm-note-edit-btn"
+              onClick={() => setNoteEditMode(true)}
+            >
+              ✏️ Not Ekle / Düzenle
+            </button>
+          )}
+          {noteEditMode && (
+            <>
+              <button
+                type="button"
+                className="crm-note-save-btn"
+                onClick={handleSaveNote}
+              >
+                Notu Kaydet
+              </button>
+              <button
+                type="button"
+                className="crm-note-cancel-btn"
+                onClick={() => {
+                  setNoteEditMode(false);
+                  setNoteDraft(customer.notes || "");
+                }}
+              >
+                İptal
+              </button>
+            </>
+          )}
+        </div>
+      </section>
+
+      {/* ZAMAN ÇİZELGESİ */}
+      <section className="crm-detail-timeline" style={{ marginBottom: 12 }}>
+        <div className="crm-detail-timeline-header">
+          <span className="crm-detail-timeline-title">Zaman Çizelgesi</span>
+        </div>
+        {sortedTimeline.length === 0 ? (
+          <div className="crm-detail-timeline-empty">
+            Bu müşteri için henüz hareket kaydı yok.
+          </div>
+        ) : (
+          <ul className="crm-timeline-list">
+            {sortedTimeline.map((ev) => (
+              <li key={ev.id} className="crm-timeline-item">
+                <div className="crm-timeline-dot" />
+                <div className="crm-timeline-content">
+                  <div className="crm-timeline-label">{ev.label}</div>
+                  <div className="crm-timeline-date">
+                    {new Date(ev.at).toLocaleString("tr-TR", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {/* MESAJLAR + BUTONLAR */}
