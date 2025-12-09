@@ -11,12 +11,10 @@ import { usePathname, useRouter } from "next/navigation";
 
 const links = [
   { href: "/", label: "Giriş", icon: "🏠" },
-  { href: "/dashboard", label: "CRM", icon: "📊" },
+  { href: "/dashboard", label: "Müşteri Yönetimi", icon: "📊" },
   { href: "/firma-bul", label: "Firma Bul", icon: "🔍" },
-  { href: "/teklif", label: "Karlılık", icon: "💹" },
   { href: "/fiyat-hesaplama", label: "Fiyat Hesaplama", icon: "⛽" },
-  { href: "/teklif-hazirla", label: "Teklif Hazırla", icon: "📝" },
-  { href: "/teklif-kayit", label: "Teklif Kayıt", icon: "📁" },
+  { href: "/teklifler", label: "Teklifler", icon: "📑" },
   { href: "/haftalik-plan", label: "Bir Haftalık Plan", icon: "🗓️" },
   { href: "/ajanda", label: "Ajanda", icon: "📅" },
   { href: "/raporlar", label: "Raporlama", icon: "📄" },
