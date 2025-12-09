@@ -14,9 +14,12 @@ const links = [
   { href: "/dashboard", label: "CRM", icon: "📊" },
   { href: "/firma-bul", label: "Firma Bul", icon: "🔍" },
   { href: "/teklif", label: "Karlılık", icon: "💹" },
+  { href: "/fiyat-hesaplama", label: "Fiyat Hesaplama", icon: "⛽" },
   { href: "/teklif-hazirla", label: "Teklif Hazırla", icon: "📝" },
   { href: "/teklif-kayit", label: "Teklif Kayıt", icon: "📁" },
+  { href: "/haftalik-plan", label: "Bir Haftalık Plan", icon: "🗓️" },
   { href: "/ajanda", label: "Ajanda", icon: "📅" },
+  { href: "/raporlar", label: "Raporlama", icon: "📄" },
 ];
 
 const dummyNotifications = [
@@ -35,7 +38,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // İlk açılışta temayı localStorage'dan oku
   useEffect(() => {
     if (typeof window === "undefined") return;
     const stored = window.localStorage.getItem("crm-theme");
@@ -44,7 +46,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Tema değişince kaydet
   useEffect(() => {
     if (typeof window === "undefined") return;
     window.localStorage.setItem("crm-theme", theme);
@@ -93,9 +94,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
     <div className={`app-root theme-${theme}`}>
       {/* ÜST BAR */}
       <header className="app-topbar">
-        {/* Sol: Hamburger + Logo */}
         <div className="app-topbar-left">
-          <button className="icon-btn" onClick={toggleMenu}>
+          <button className="icon-btn" onClick={toggleMenu} type="button">
             ☰
           </button>
 
@@ -110,7 +110,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Orta: Arama */}
         <div className="app-topbar-center">
           <input
             type="text"
@@ -122,13 +121,16 @@ export default function AppShell({ children }: { children: ReactNode }) {
           />
         </div>
 
-        {/* Sağ: Tema, Bildirim, Profil */}
         <div className="app-topbar-right">
-          <button className="icon-btn" onClick={toggleTheme}>
+          <button className="icon-btn" onClick={toggleTheme} type="button">
             {theme === "dark" ? "🌙" : "☀️"}
           </button>
 
-          <button className="icon-btn" onClick={toggleNotifications}>
+          <button
+            className="icon-btn"
+            onClick={toggleNotifications}
+            type="button"
+          >
             🔔
           </button>
 
@@ -140,7 +142,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
             <div className="app-avatar" />
           </button>
 
-          {/* Profil menü */}
           {profileOpen && (
             <div className="app-profile-menu">
               <button className="app-profile-item" type="button">
@@ -162,7 +163,6 @@ export default function AppShell({ children }: { children: ReactNode }) {
             </div>
           )}
 
-          {/* Bildirim menü */}
           {notificationsOpen && (
             <div className="app-notif-menu">
               <div className="app-notif-header">Bildirimler</div>
@@ -184,15 +184,20 @@ export default function AppShell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      {/* HAMBURGER MENÜ (DRAWER) */}
+      {/* HAMBURGER MENÜ */}
       {menuOpen && (
         <>
-          <div className="app-drawer-overlay" onClick={toggleMenu} />
+          <div
+            className="app-drawer-overlay"
+            onClick={toggleMenu}
+            role="button"
+            aria-hidden="true"
+          />
 
           <nav className="app-drawer">
             <div className="app-drawer-header">
               <span className="app-drawer-title">Menü</span>
-              <button className="icon-btn" onClick={toggleMenu}>
+              <button className="icon-btn" onClick={toggleMenu} type="button">
                 ✕
               </button>
             </div>

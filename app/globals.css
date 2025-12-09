@@ -2019,3 +2019,642 @@ body {
   background: #e5e7eb;
   color: #0f172a;
 }
+/* ============ RAPORLAMA ============ */
+.report-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.report-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.report-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.report-subtitle {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.report-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.report-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.report-filter-label {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.report-select {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background-color: rgba(15, 23, 42, 0.96);
+  color: #e5e7eb;
+  font-size: 12px;
+}
+
+.theme-light .report-select {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.report-checkbox-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+.theme-light .report-checkbox-label {
+  color: #0f172a;
+}
+
+.report-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex: 1;
+}
+
+.report-export-btn {
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  background: radial-gradient(
+    circle at left,
+    rgba(56, 189, 248, 0.8),
+    rgba(37, 99, 235, 0.9)
+  );
+  color: #f9fafb;
+  white-space: nowrap;
+}
+
+.report-export-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.report-summary {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.report-table-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-table-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.report-table-subtitle {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.report-empty {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.report-table-wrapper {
+  margin-top: 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  overflow: auto;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.report-table thead th {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+  background-color: rgba(15, 23, 42, 0.98);
+}
+
+.theme-light .report-table thead th {
+  background-color: #e5e7eb;
+  color: #0f172a;
+}
+
+.report-table tbody td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(31, 41, 55, 0.8);
+}
+
+.theme-light .report-table tbody td {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.report-table tbody tr:nth-child(even) td {
+  background-color: rgba(15, 23, 42, 0.9);
+}
+
+.theme-light .report-table tbody tr:nth-child(even) td {
+  background-color: #f9fafb;
+}
+
+.report-note-cell {
+  max-width: 260px;
+  white-space: pre-wrap;
+}
+.crm-list-search {
+  margin-bottom: 6px;
+}
+/* ============ GİRİŞ / ÖZET DASHBOARDU ============ */
+.home-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+@media (max-width: 900px) {
+  .home-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.home-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.home-subtitle {
+  font-size: 13px;
+  color: #9ca3af;
+}
+
+.home-header-pill {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: radial-gradient(
+    circle at left,
+    rgba(56, 189, 248, 0.25),
+    rgba(37, 99, 235, 0.45)
+  );
+  color: #e5e7eb;
+}
+
+.theme-light .home-header-pill {
+  background: linear-gradient(135deg, #e0f2fe, #e5e7eb);
+  color: #0f172a;
+}
+
+.home-header-pill-label {
+  opacity: 0.8;
+}
+
+.home-header-pill-value {
+  font-weight: 600;
+}
+
+/* Özet kartlar */
+.home-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (max-width: 1024px) {
+  .home-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .home-stat-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.home-stat-card {
+  padding: 10px 12px;
+}
+
+.home-stat-label {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.home-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.home-stat-meta {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* Alt grid */
+.home-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 4fr);
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .home-bottom-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.home-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.home-section-subtitle {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-bottom: 8px;
+}
+
+/* Aktivite özeti */
+.home-activity-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-activity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .home-activity-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.home-activity-block {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background-color: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.theme-light .home-activity-block {
+  background-color: #f9fafb;
+}
+
+.home-activity-label {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.home-activity-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #e5e7eb;
+}
+
+.theme-light .home-activity-row {
+  color: #0f172a;
+}
+
+.home-activity-value {
+  font-weight: 600;
+}
+
+.home-activity-hint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* Son eklenen müşteriler */
+.home-latest-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-latest-empty {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.home-latest-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.home-latest-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background-color: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.theme-light .home-latest-item {
+  background-color: #f9fafb;
+}
+
+.home-latest-main {
+  min-width: 0;
+}
+
+.home-latest-name {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.home-latest-meta {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.home-latest-discount {
+  color: #a5b4fc;
+}
+
+.home-latest-side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 11px;
+}
+
+.home-latest-badge {
+  border-radius: 999px;
+  padding: 2px 8px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+}
+
+.home-latest-badge--auto {
+  border-color: rgba(56, 189, 248, 0.9);
+  color: #7dd3fc;
+}
+
+.home-latest-badge--manual {
+  border-color: rgba(249, 115, 22, 0.9);
+  color: #fdba74;
+}
+
+.home-latest-date {
+  color: #9ca3af;
+}
+/* CRM - Müşteri durum pill ve butonları */
+.crm-card-row-status {
+  margin-top: 2px;
+}
+
+.crm-status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background-color: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+}
+
+.theme-light .crm-status-pill {
+  background-color: #f9fafb;
+  color: #0f172a;
+}
+
+.crm-status-pill--small {
+  font-size: 10px;
+  padding: 1px 6px;
+}
+
+.crm-detail-status-block {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.crm-detail-status-row span {
+  margin-left: 4px;
+}
+
+.crm-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.crm-status-chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: transparent;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.theme-light .crm-status-chip {
+  color: #0f172a;
+}
+
+.crm-status-chip--active {
+  border-color: rgba(56, 189, 248, 0.9);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+}
+
+/* Duruma göre hafif renk vurguları */
+.crm-status-chip--gorusulmedi {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.crm-status-chip--gorusuldu_olumlu {
+  border-color: rgba(34, 197, 94, 0.8);
+}
+
+.crm-status-chip--gorusuldu_olumsuz {
+  border-color: rgba(239, 68, 68, 0.8);
+}
+
+.crm-status-chip--degerlendiriyor {
+  border-color: rgba(234, 179, 8, 0.85);
+}
+
+.crm-status-chip--sozlesme {
+  border-color: rgba(129, 140, 248, 0.9);
+}
+/* ============ CRM ZAMAN ÇİZELGESİ ============ */
+.crm-detail-timeline {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(148, 163, 184, 0.4);
+}
+
+.crm-detail-timeline-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.crm-detail-timeline-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.crm-detail-timeline-empty {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.crm-timeline-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-top: 4px;
+}
+
+.crm-timeline-item {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.crm-timeline-dot {
+  width: 6px;
+  height: 6px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    rgba(56, 189, 248, 1),
+    rgba(37, 99, 235, 1)
+  );
+}
+
+.crm-timeline-content {
+  flex: 1;
+}
+
+.crm-timeline-label {
+  font-size: 12px;
+}
+
+.crm-timeline-date {
+  font-size: 11px;
+  color: #9ca3af;
+}
+/* --------------------------------------------------------- */
+/* ÖZEL: Sözleşme yapıldı kartı kutlama görünümü             */
+/* --------------------------------------------------------- */
+
+.home-stat-card--contract {
+  position: relative;
+  overflow: hidden;
+
+  /* Yeşil premium çerçeve */
+  border: 1px solid rgba(74, 222, 128, 0.7);
+
+  /* Karanlık modda ışıltılı arka plan */
+  background: radial-gradient(
+      circle at top left,
+      rgba(34, 197, 94, 0.28),
+      rgba(15, 23, 42, 0.98)
+  );
+
+  /* Hafif yeşil glow */
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.38);
+}
+
+/* Light tema desteği */
+.theme-light .home-stat-card--contract {
+  background: radial-gradient(
+      circle at top left,
+      rgba(187, 247, 208, 0.9),
+      #ffffff
+  );
+  border-color: rgba(34, 197, 94, 0.7);
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
+}
+
+/* Kupa animasyonu */
+.home-stat-contract-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.9));
+
+  /* Nefes alma animasyonu */
+  animation: homeContractPulse 2.2s ease-in-out infinite;
+}
+
+/* Kupa animasyon keyframes */
+@keyframes homeContractPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+}
